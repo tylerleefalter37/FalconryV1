@@ -1,0 +1,2154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TALON & TIMBER: 64-Bit Falconer</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Retro 64-Bit & Clean UI Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-deep: #141a14;
+            --bg-panel: #1e281f;
+            --bg-card: #283529;
+            --border-wood: #5c4028;
+            --border-gold: #c89d54;
+            --accent-amber: #e69f38;
+            --accent-green: #4da861;
+            --text-cream: #f4ebd9;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            color: var(--text-cream);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+        .font-pixel-title {
+            font-family: 'Press Start 2P', monospace;
+            letter-spacing: 0.5px;
+        }
+
+        .font-pixel-lg {
+            font-family: 'VT323', monospace;
+            letter-spacing: 0.5px;
+        }
+
+        /* 64-Bit Tactile Beveled Buttons */
+        .btn-64 {
+            position: relative;
+            background: linear-gradient(180deg, #3a4d3c 0%, #263528 100%);
+            border: 2px solid #6b5335;
+            box-shadow: inset 0 2px 0 rgba(255,255,255,0.18), 0 4px 0 #151d16, 0 5px 8px rgba(0,0,0,0.45);
+            transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.12s ease;
+            border-radius: 8px;
+        }
+        .btn-64:hover:not(:disabled) {
+            filter: brightness(1.12);
+            border-color: #c89d54;
+        }
+        .btn-64:active:not(:disabled) {
+            transform: translateY(3px);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 1px 0 #151d16;
+        }
+        .btn-64:disabled {
+            opacity: 0.48;
+            cursor: not-allowed;
+        }
+
+        .btn-amber {
+            background: linear-gradient(180deg, #d98a2b 0%, #9e5c14 100%);
+            border-color: #f6c26b;
+            box-shadow: inset 0 2px 0 rgba(255,255,255,0.3), 0 4px 0 #4d2905, 0 5px 8px rgba(0,0,0,0.45);
+            color: #fff8eb;
+        }
+        .btn-amber:active:not(:disabled) {
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.15), 0 1px 0 #4d2905;
+        }
+
+        .btn-emerald {
+            background: linear-gradient(180deg, #3b8c4e 0%, #245c32 100%);
+            border-color: #7ad48e;
+            box-shadow: inset 0 2px 0 rgba(255,255,255,0.25), 0 4px 0 #113019, 0 5px 8px rgba(0,0,0,0.45);
+        }
+
+        .btn-crimson {
+            background: linear-gradient(180deg, #a83838 0%, #6e1f1f 100%);
+            border-color: #e07a7a;
+            box-shadow: inset 0 2px 0 rgba(255,255,255,0.25), 0 4px 0 #380d0d;
+        }
+
+        /* Wood Frame Panel Styling */
+        .wood-panel {
+            background-color: var(--bg-panel);
+            border: 3px solid #5c4028;
+            box-shadow: inset 0 0 0 2px #2c1e12, 0 6px 16px rgba(0,0,0,0.5);
+            border-radius: 12px;
+        }
+
+        .wood-card {
+            background-color: var(--bg-card);
+            border: 2px solid #4a3a28;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+            border-radius: 10px;
+        }
+
+        /* Pixelated Canvas Rendering */
+        #gameCanvas {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        /* CRT Scanline overlay */
+        .crt-overlay {
+            background: linear-gradient(
+                rgba(18, 16, 16, 0) 50%, 
+                rgba(0, 0, 0, 0.22) 50%
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+        }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #141a14;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4e3824;
+            border-radius: 4px;
+            border: 1px solid #7d5b3b;
+        }
+
+        .tab-active {
+            background: linear-gradient(180deg, #69492a 0%, #422d19 100%) !important;
+            border-color: #f0b965 !important;
+            color: #fff6e0 !important;
+            transform: translateY(1px);
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(240, 185, 101, 0.5); }
+            50% { box-shadow: 0 0 12px 3px rgba(240, 185, 101, 0.75); }
+        }
+        .pulse-highlight {
+            animation: pulseGlow 1.6s infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center pb-6">
+
+    <!-- MAIN APP CONTAINER -->
+    <div class="w-full max-w-5xl px-2 sm:px-4 pt-2 flex flex-col gap-2.5">
+
+        <!-- TOP STATUS BAR -->
+        <header class="wood-panel px-3 py-2 flex flex-wrap items-center justify-between gap-2">
+            <!-- Camp Identity & Title -->
+            <div class="flex items-center gap-2.5">
+                <div id="headerBannerIcon" class="w-9 h-9 rounded-lg flex items-center justify-center border-2 border-amber-400/70 shadow-inner text-lg bg-amber-800">
+                    🦅
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 id="uiCampName" class="font-pixel-title text-xs sm:text-sm text-amber-300 tracking-wide">TIMBER ROOST</h1>
+                        <span id="uiDayBadge" class="text-[11px] bg-stone-900/90 border border-amber-600/50 px-2 py-0.5 rounded text-amber-200 font-semibold">Day 1 • Dawn</span>
+                    </div>
+                    <p class="text-xs text-stone-300 flex items-center gap-1.5">
+                        <span id="uiFalconerName" class="font-semibold text-white">Alden</span>
+                        <span class="text-stone-500">•</span>
+                        <span id="uiFalconerTitle" class="text-amber-400 font-medium">Apprentice Austringer</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Key Vitals & Currencies -->
+            <div class="flex flex-wrap items-center gap-2 sm:gap-3 text-xs">
+                <!-- Player Stamina -->
+                <div class="bg-stone-900/80 border border-stone-700 rounded-lg px-2.5 py-1 flex items-center gap-2" title="Falconer Energy & Warmth">
+                    <i class="fa-solid fa-bolt text-amber-400"></i>
+                    <div>
+                        <div class="flex justify-between gap-2 text-[10px] text-stone-300">
+                            <span>ENERGY</span>
+                            <span id="uiEnergyText" class="font-bold text-amber-300">100/100</span>
+                        </div>
+                        <div class="w-20 h-2 bg-stone-800 rounded-full overflow-hidden mt-0.5">
+                            <div id="uiEnergyBar" class="h-full bg-gradient-to-r from-amber-500 to-yellow-400 transition-all duration-300" style="width: 100%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Active Raptor Quick Pill -->
+                <div class="bg-stone-900/80 border border-stone-700 rounded-lg px-2.5 py-1 flex items-center gap-2" title="Active Raptor Keenness & Trust">
+                    <i class="fa-solid fa-feather-pointed text-emerald-400"></i>
+                    <div>
+                        <div class="flex justify-between gap-2 text-[10px]">
+                            <span id="uiHeaderBirdName" class="font-bold text-emerald-300 truncate max-w-[85px]">Bramble</span>
+                            <span id="uiHeaderBirdTrust" class="text-amber-300">Trust 35%</span>
+                        </div>
+                        <div class="w-24 h-2 bg-stone-800 rounded-full overflow-hidden mt-0.5">
+                            <div id="uiHeaderBirdBar" class="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-300" style="width: 35%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gold & Quick Rest -->
+                <div class="flex items-center gap-1.5 bg-stone-900/90 border border-amber-600/50 rounded-lg px-2.5 py-1.5">
+                    <i class="fa-solid fa-coins text-yellow-400"></i>
+                    <span id="uiGoldCoins" class="font-pixel-lg text-lg leading-none text-yellow-300">45</span>
+                </div>
+
+                <button onclick="Game.sleepNextDay()" class="btn-64 btn-amber px-2.5 py-1.5 text-xs font-semibold flex items-center gap-1.5" title="Sleep in shelter until Dawn, restoring energy & triggering daily camp production">
+                    <i class="fa-solid fa-campground"></i>
+                    <span class="hidden sm:inline">Rest Dawn</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- 64-BIT PROCEDURAL CANVAS VIEWPORT -->
+        <section class="wood-panel relative overflow-hidden">
+            <!-- Top Overlay HUD inside Canvas -->
+            <div class="absolute top-2 left-2 right-2 z-10 flex flex-wrap items-center justify-between gap-1 pointer-events-none">
+                <div class="flex items-center gap-1.5 bg-black/65 backdrop-blur-xs border border-amber-500/40 px-2.5 py-1 rounded-lg text-xs pointer-events-auto">
+                    <span id="uiBiomeBadge" class="font-semibold text-emerald-300">🌲 Whispering Pine Woods</span>
+                    <span class="text-stone-500">|</span>
+                    <span id="uiWeatherBadge" class="text-sky-200">☀️ Clear Breeze</span>
+                    <span class="text-stone-500 hidden sm:inline">|</span>
+                    <span id="uiStainBadge" class="text-amber-200 hidden sm:inline">🪵 Stain: Natural Pine</span>
+                </div>
+
+                <div class="flex items-center gap-1.5 pointer-events-auto">
+                    <button onclick="Game.triggerCanvasCallBird()" class="bg-black/75 hover:bg-amber-900/90 text-amber-200 border border-amber-500/50 rounded-lg px-2.5 py-1 text-xs font-semibold flex items-center gap-1 transition">
+                        <i class="fa-solid fa-hand-fist"></i> Whistle to Fist
+                    </button>
+                    <button onclick="Game.toggleSound()" id="btnSoundToggle" class="bg-black/75 hover:bg-stone-800 text-stone-200 border border-stone-600 rounded-lg px-2 py-1 text-xs" title="Toggle 64-Bit Audio Synth">
+                        <i class="fa-solid fa-volume-high"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Interactive Hunt / Lure Overlay Banner -->
+            <div id="huntActionOverlay" class="hidden absolute inset-x-0 bottom-3 z-20 flex flex-col items-center justify-center px-4 pointer-events-none">
+                <div class="bg-stone-950/90 border-2 border-amber-400 rounded-xl px-4 py-2.5 shadow-2xl flex flex-col sm:flex-row items-center gap-3 pointer-events-auto max-w-lg w-full justify-between">
+                    <div class="text-center sm:text-left">
+                        <div id="huntOverlayTitle" class="font-pixel-title text-xs text-amber-300">QUARRY FLUSHED!</div>
+                        <div id="huntOverlaySub" class="text-xs text-stone-200 mt-0.5">Wait for your hawk to reach ideal stoop pitch...</div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button id="btnHuntStrike" onclick="Game.executeHuntStrike()" class="btn-64 btn-amber px-4 py-2 text-xs font-pixel-title pulse-highlight">
+                            ⚡ STOOP STRIKE!
+                        </button>
+                        <button onclick="Game.cancelActiveFlight()" class="btn-64 px-2.5 py-2 text-xs text-stone-300">
+                            Recall
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- The 64-Bit Viewport Canvas -->
+            <div class="relative w-full h-56 sm:h-72 md:h-80 bg-stone-950">
+                <canvas id="gameCanvas"></canvas>
+                <div id="crtOverlay" class="crt-overlay absolute inset-0"></div>
+            </div>
+
+            <!-- Quick Resource Ticker Bar under Canvas -->
+            <div class="bg-stone-950/95 border-t-2 border-amber-900/60 px-3 py-1.5 flex items-center justify-between gap-2 overflow-x-auto text-xs whitespace-nowrap">
+                <div class="flex items-center gap-3 sm:gap-4">
+                    <span title="Timber Logs (All Species Total)"><i class="fa-solid fa-tree text-amber-500 mr-1"></i>Timber: <b id="resTotalWood" class="text-amber-200">0</b></span>
+                    <span title="Raw Game Meat"><i class="fa-solid fa-drumstick-bite text-red-400 mr-1"></i>Meat: <b id="resMeat" class="text-stone-100">0</b></span>
+                    <span title="Falcon Tidbits & Dried Rations"><i class="fa-solid fa-bacon text-amber-400 mr-1"></i>Tidbits: <b id="resTidbits" class="text-stone-100">0</b></span>
+                    <span title="Fur Pelts & Leather"><i class="fa-solid fa-scroll text-orange-300 mr-1"></i>Pelts: <b id="resPelts" class="text-stone-100">0</b></span>
+                    <span title="Prime Feathers"><i class="fa-solid fa-feather text-teal-300 mr-1"></i>Feathers: <b id="resFeathers" class="text-stone-100">0</b></span>
+                    <span title="Field Stone & Iron"><i class="fa-solid fa-hammer text-stone-400 mr-1"></i>Stone/Iron: <b id="resStoneIron" class="text-stone-100">0/0</b></span>
+                    <span title="Medicinal Herbs & Natural Dyes"><i class="fa-solid fa-leaf text-emerald-400 mr-1"></i>Herbs: <b id="resHerbs" class="text-stone-100">0</b></span>
+                </div>
+                <span id="uiActionLogTicker" class="text-amber-300/90 italic text-[11px] hidden md:inline truncate max-w-xs">Welcome to Talon & Timber!</span>
+            </div>
+        </section>
+
+        <!-- 6-TAB NAVIGATION DECK -->
+        <nav class="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
+            <button onclick="Game.switchTab('falconry')" id="tabBtn-falconry" class="btn-64 tab-active py-2 px-2 text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5">
+                <span>🦅</span> <span>Falconry</span>
+            </button>
+            <button onclick="Game.switchTab('wilderness')" id="tabBtn-wilderness" class="btn-64 py-2 px-2 text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5">
+                <span>🏹</span> <span>Wilderness</span>
+            </button>
+            <button onclick="Game.switchTab('workshop')" id="tabBtn-workshop" class="btn-64 py-2 px-2 text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5">
+                <span>🪚</span> <span>Workshop</span>
+            </button>
+            <button onclick="Game.switchTab('homestead')" id="tabBtn-homestead" class="btn-64 py-2 px-2 text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5">
+                <span>🏡</span> <span>Homestead</span>
+            </button>
+            <button onclick="Game.switchTab('quests')" id="tabBtn-quests" class="btn-64 py-2 px-2 text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 relative">
+                <span>📜</span> <span>Missions</span>
+                <span id="questAlertDot" class="hidden w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping absolute top-1 right-1"></span>
+            </button>
+            <button onclick="Game.switchTab('settings')" id="tabBtn-settings" class="btn-64 py-2 px-2 text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5">
+                <span>⚙️</span> <span>Save/Camp</span>
+            </button>
+        </nav>
+
+        <!-- TAB CONTENT PANELS -->
+        <main class="wood-panel p-3 sm:p-4 min-h-[390px]">
+
+            <!-- ==========================================
+                 TAB 1: FALCONRY & RAPTOR CUSTOMIZATION
+                 ========================================== -->
+            <div id="tabPanel-falconry" class="space-y-4">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-3.5">
+                    <!-- Left 7 Cols: Active Bird Vitals & Training Actions -->
+                    <div class="lg:col-span-7 wood-card p-3.5 flex flex-col justify-between gap-3">
+                        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-stone-700/80 pb-2.5">
+                            <div class="flex items-center gap-2.5">
+                                <div id="birdSpeciesBadgeIcon" class="w-11 h-11 rounded-xl bg-amber-950/90 border-2 border-amber-500/70 flex items-center justify-center text-2xl shadow">
+                                    🦅
+                                </div>
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <input id="inputBirdName" type="text" maxlength="16" onchange="Game.renameActiveBird(this.value)"
+                                            class="bg-stone-900/90 border border-amber-600/50 focus:border-amber-400 rounded px-2 py-0.5 text-sm font-bold text-amber-200 w-36 outline-none"
+                                            value="Bramble" title="Tap to rename your raptor">
+                                        <span id="birdLevelBadge" class="bg-amber-500/20 border border-amber-400/50 text-amber-300 text-xs px-2 py-0.5 rounded font-semibold">Lv. 1</span>
+                                    </div>
+                                    <p id="birdSpeciesSubtitle" class="text-xs text-stone-300 mt-0.5">Red-Tailed Hawk • Classic Plumage</p>
+                                </div>
+                            </div>
+
+                            <!-- Hood Toggle -->
+                            <button onclick="Game.toggleBirdHood()" id="btnHoodToggle" class="btn-64 px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5">
+                                <i class="fa-solid fa-mask"></i> <span id="hoodStatusText">Un-Hooded</span>
+                            </button>
+                        </div>
+
+                        <!-- 4 Authentic-Lite Falconry Stat Bars -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+                            <!-- Trust / Manning -->
+                            <div class="bg-stone-900/75 p-2.5 rounded-lg border border-stone-700/80">
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-stone-300 font-medium"><i class="fa-solid fa-handshake text-amber-400 mr-1"></i>Trust (Manning)</span>
+                                    <span id="statBirdTrust" class="font-bold text-amber-300">35%</span>
+                                </div>
+                                <div class="w-full h-2.5 bg-stone-800 rounded-full overflow-hidden">
+                                    <div id="barBirdTrust" class="h-full bg-gradient-to-r from-amber-600 to-amber-400 transition-all" style="width:35%"></div>
+                                </div>
+                                <p class="text-[11px] text-stone-400 mt-1">Higher trust prevents flying off & unlocks free-flight hunts.</p>
+                            </div>
+
+                            <!-- Keenness / Hunting Weight -->
+                            <div class="bg-stone-900/75 p-2.5 rounded-lg border border-stone-700/80">
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-stone-300 font-medium"><i class="fa-solid fa-scale-balanced text-emerald-400 mr-1"></i>Keenness (Appetite)</span>
+                                    <span id="statBirdKeen" class="font-bold text-emerald-300">70% (Prime)</span>
+                                </div>
+                                <div class="w-full h-2.5 bg-stone-800 rounded-full overflow-hidden">
+                                    <div id="barBirdKeen" class="h-full bg-gradient-to-r from-emerald-600 to-lime-400 transition-all" style="width:70%"></div>
+                                </div>
+                                <p class="text-[11px] text-stone-400 mt-1">Ideal hunting zone is <b>55%–85%</b>. Feed tidbits or weather to adjust.</p>
+                            </div>
+
+                            <!-- Bird Stamina -->
+                            <div class="bg-stone-900/75 p-2.5 rounded-lg border border-stone-700/80">
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-stone-300 font-medium"><i class="fa-solid fa-wind text-sky-400 mr-1"></i>Wing Stamina</span>
+                                    <span id="statBirdStamina" class="font-bold text-sky-300">100/100</span>
+                                </div>
+                                <div class="w-full h-2.5 bg-stone-800 rounded-full overflow-hidden">
+                                    <div id="barBirdStamina" class="h-full bg-gradient-to-r from-sky-600 to-cyan-400 transition-all" style="width:100%"></div>
+                                </div>
+                            </div>
+
+                            <!-- Speed & Talon Skill -->
+                            <div class="bg-stone-900/75 p-2.5 rounded-lg border border-stone-700/80">
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-stone-300 font-medium"><i class="fa-solid fa-crosshairs text-rose-400 mr-1"></i>Talon & Stoop Power</span>
+                                    <span id="statBirdPower" class="font-bold text-rose-300">24 Pwr</span>
+                                </div>
+                                <div class="w-full h-2.5 bg-stone-800 rounded-full overflow-hidden">
+                                    <div id="barBirdXp" class="h-full bg-gradient-to-r from-purple-600 to-pink-400 transition-all" style="width:20%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Interactive Training & Feeding Action Buttons -->
+                        <div>
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-amber-300/90 mb-2">Training, Manning & Feeding Actions</h3>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                <button onclick="Game.trainManOnFist()" class="btn-64 p-2.5 text-left flex flex-col justify-between">
+                                    <div class="font-bold text-xs text-amber-200 flex items-center justify-between">
+                                        <span>🧤 Man on Fist</span>
+                                        <span class="text-[10px] text-stone-300">-8⚡</span>
+                                    </div>
+                                    <span class="text-[11px] text-stone-300 mt-1">+Trust, +Keenness, calm wildness</span>
+                                </button>
+
+                                <button onclick="Game.feedBirdTidbit()" class="btn-64 p-2.5 text-left flex flex-col justify-between">
+                                    <div class="font-bold text-xs text-emerald-200 flex items-center justify-between">
+                                        <span>🥩 Feed Tidbit</span>
+                                        <span class="text-[10px] text-stone-300">-1 Tidbit</span>
+                                    </div>
+                                    <span class="text-[11px] text-stone-300 mt-1">+Trust, +25 Wing Stamina, -10% Keen</span>
+                                </button>
+
+                                <button onclick="Game.trainCreanceCall()" class="btn-64 p-2.5 text-left flex flex-col justify-between">
+                                    <div class="font-bold text-xs text-sky-200 flex items-center justify-between">
+                                        <span>🪢 Creance Flight</span>
+                                        <span class="text-[10px] text-stone-300">-10⚡</span>
+                                    </div>
+                                    <span class="text-[11px] text-stone-300 mt-1">Line recall drill (+Trust & XP)</span>
+                                </button>
+
+                                <button onclick="Game.trainSwingLure()" class="btn-64 btn-amber p-2.5 text-left flex flex-col justify-between">
+                                    <div class="font-bold text-xs text-white flex items-center justify-between">
+                                        <span>🪶 Swing Lure</span>
+                                        <span class="text-[10px] text-amber-100">-12⚡</span>
+                                    </div>
+                                    <span class="text-[11px] text-amber-100 mt-1">Canvas stoop drill! High XP & Power</span>
+                                </button>
+
+                                <button onclick="Game.feedFullGorge()" class="btn-64 p-2.5 text-left flex flex-col justify-between">
+                                    <div class="font-bold text-xs text-rose-200 flex items-center justify-between">
+                                        <span>🍗 Full Gorge</span>
+                                        <span class="text-[10px] text-stone-300">-2 Meat</span>
+                                    </div>
+                                    <span class="text-[11px] text-stone-300 mt-1">100% Stamina & Heal, drops Keenness</span>
+                                </button>
+
+                                <button onclick="Game.preenAndCope()" class="btn-64 p-2.5 text-left flex flex-col justify-between">
+                                    <div class="font-bold text-xs text-teal-200 flex items-center justify-between">
+                                        <span>🌿 Preen & Cope</span>
+                                        <span class="text-[10px] text-stone-300">-5⚡</span>
+                                    </div>
+                                    <span class="text-[11px] text-stone-300 mt-1">Trim talons, oil feathers (+Trust/Keen)</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right 5 Cols: Raptor Plumage & Crafted Furniture Loadout -->
+                    <div class="lg:col-span-5 wood-card p-3.5 flex flex-col justify-between gap-3">
+                        <div>
+                            <h3 class="font-pixel-title text-xs text-amber-300 mb-2 flex items-center gap-2">
+                                <i class="fa-solid fa-palette"></i> RAPTOR CUSTOMIZATION & FURNITURE
+                            </h3>
+
+                            <!-- Plumage Morph Selector -->
+                            <div class="mb-3">
+                                <label class="block text-xs text-stone-300 font-semibold mb-1">Plumage Color Morph (Rendered on Canvas):</label>
+                                <div id="morphSelectorGrid" class="grid grid-cols-5 gap-1.5">
+                                    <!-- Populated by JS -->
+                                </div>
+                            </div>
+
+                            <!-- Equipped Falconry Furniture Selectors -->
+                            <div class="space-y-2 text-xs">
+                                <div class="bg-stone-900/80 p-2 rounded-lg border border-stone-700 flex items-center justify-between gap-2">
+                                    <div>
+                                        <span class="text-stone-400 block text-[10px] uppercase">Assigned Perch</span>
+                                        <span id="eqPerchName" class="font-bold text-amber-200">Pine Block Perch</span>
+                                    </div>
+                                    <select id="selectPerch" onchange="Game.equipBirdGear('perch', this.value)" class="bg-stone-800 border border-amber-600/50 rounded px-2 py-1 text-xs text-stone-100 outline-none">
+                                    </select>
+                                </div>
+
+                                <div class="bg-stone-900/80 p-2 rounded-lg border border-stone-700 flex items-center justify-between gap-2">
+                                    <div>
+                                        <span class="text-stone-400 block text-[10px] uppercase">Falcon Hood</span>
+                                        <span id="eqHoodName" class="font-bold text-amber-200">Simple Leather Hood</span>
+                                    </div>
+                                    <select id="selectHood" onchange="Game.equipBirdGear('hood', this.value)" class="bg-stone-800 border border-amber-600/50 rounded px-2 py-1 text-xs text-stone-100 outline-none">
+                                    </select>
+                                </div>
+
+                                <div class="bg-stone-900/80 p-2 rounded-lg border border-stone-700 flex items-center justify-between gap-2">
+                                    <div>
+                                        <span class="text-stone-400 block text-[10px] uppercase">Jesses & Leash</span>
+                                        <span id="eqJessesName" class="font-bold text-amber-200">Rawhide Straps</span>
+                                    </div>
+                                    <select id="selectJesses" onchange="Game.equipBirdGear('jesses', this.value)" class="bg-stone-800 border border-amber-600/50 rounded px-2 py-1 text-xs text-stone-100 outline-none">
+                                    </select>
+                                </div>
+
+                                <div class="bg-stone-900/80 p-2 rounded-lg border border-stone-700 flex items-center justify-between gap-2">
+                                    <div>
+                                        <span class="text-stone-400 block text-[10px] uppercase">Bewit Bells</span>
+                                        <span id="eqBellsName" class="font-bold text-amber-200">Copper Acorn Bell</span>
+                                    </div>
+                                    <select id="selectBells" onchange="Game.equipBirdGear('bells', this.value)" class="bg-stone-800 border border-amber-600/50 rounded px-2 py-1 text-xs text-stone-100 outline-none">
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mews Roster Bar -->
+                        <div class="border-t border-stone-700/80 pt-2.5">
+                            <div class="flex items-center justify-between text-xs mb-1.5">
+                                <span class="font-bold text-amber-300">🏡 MEWS ROSTER (<span id="mewsCountText">1/2</span> Capacity)</span>
+                                <span class="text-[11px] text-stone-400">Upgrade Mews for more birds</span>
+                            </div>
+                            <div id="mewsRosterList" class="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==========================================
+                 TAB 2: WILDERNESS, HUNTING & FORAGING
+                 ========================================== -->
+            <div id="tabPanel-wilderness" class="hidden space-y-4">
+                <!-- Biome Selection Cards -->
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="font-pixel-title text-xs text-amber-300">🗺️ SELECT HUNTING & TIMBER BIOME</h3>
+                        <span class="text-xs text-stone-400">Changing biome updates the live 64-Bit Viewport</span>
+                    </div>
+                    <div id="biomeGrid" class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Hunting vs Timber & Bushcraft Split -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                    <!-- Free-Flight Hunting Box -->
+                    <div class="wood-card p-3.5 flex flex-col justify-between gap-3">
+                        <div>
+                            <div class="flex items-center justify-between border-b border-stone-700 pb-2 mb-2.5">
+                                <h4 class="font-pixel-title text-xs text-emerald-300">🦅 FREE-FLIGHT QUARRY HUNT</h4>
+                                <span id="huntReadinessBadge" class="text-xs bg-emerald-950 border border-emerald-500/50 text-emerald-300 px-2 py-0.5 rounded">Hawk Ready</span>
+                            </div>
+                            <p class="text-xs text-stone-300 leading-relaxed mb-3">
+                                Cast your active raptor into the sky above <b id="huntBiomeName" class="text-amber-300">Whispering Pine Woods</b>. Watch the viewport for flushing game and strike at the peak stoop!
+                            </p>
+                            <div id="biomeQuarryList" class="bg-stone-900/80 border border-stone-700 rounded-lg p-2.5 text-xs space-y-1 mb-3">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <button onclick="Game.startInteractiveHunt()" class="btn-64 btn-emerald py-2.5 px-3 text-xs font-bold flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-feather-pointed"></i> Launch Free-Flight Hunt (-15⚡)
+                            </button>
+                            <button onclick="Game.attemptTrapWildRaptor()" class="btn-64 btn-amber py-2.5 px-3 text-xs font-bold flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-cage"></i> Set Raptor Trap (-20⚡)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Timber Felling & Bushcraft Gathering -->
+                    <div class="wood-card p-3.5 flex flex-col justify-between gap-3">
+                        <div>
+                            <div class="flex items-center justify-between border-b border-stone-700 pb-2 mb-2.5">
+                                <h4 class="font-pixel-title text-xs text-amber-300">🪓 TIMBER FELLING & BUSHCRAFT</h4>
+                                <span class="text-xs text-stone-400">Stockpile wood for workshop & mews</span>
+                            </div>
+
+                            <!-- Wood Species Inventory Breakdown -->
+                            <div class="grid grid-cols-5 gap-1.5 mb-3 text-center">
+                                <div class="bg-stone-900/85 border border-stone-700 rounded p-1.5">
+                                    <div class="text-[10px] text-stone-400">Pine</div>
+                                    <div id="woodCnt-pine" class="font-bold text-amber-200 text-sm">0</div>
+                                </div>
+                                <div class="bg-stone-900/85 border border-stone-700 rounded p-1.5">
+                                    <div class="text-[10px] text-stone-400">Birch</div>
+                                    <div id="woodCnt-birch" class="font-bold text-stone-100 text-sm">0</div>
+                                </div>
+                                <div class="bg-stone-900/85 border border-stone-700 rounded p-1.5">
+                                    <div class="text-[10px] text-stone-400">Cedar</div>
+                                    <div id="woodCnt-cedar" class="font-bold text-red-300 text-sm">0</div>
+                                </div>
+                                <div class="bg-stone-900/85 border border-stone-700 rounded p-1.5">
+                                    <div class="text-[10px] text-stone-400">White Oak</div>
+                                    <div id="woodCnt-oak" class="font-bold text-yellow-200 text-sm">0</div>
+                                </div>
+                                <div class="bg-stone-900/85 border border-stone-700 rounded p-1.5">
+                                    <div class="text-[10px] text-stone-400">Walnut</div>
+                                    <div id="woodCnt-walnut" class="font-bold text-amber-500 text-sm">0</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="Game.fellTimberAction()" class="btn-64 p-2.5 text-left">
+                                <div class="font-bold text-xs text-amber-200 flex justify-between">
+                                    <span>🪓 Fell Biome Timber</span>
+                                    <span>-12⚡</span>
+                                </div>
+                                <div class="text-[11px] text-stone-300 mt-0.5">Harvest local logs & bark</div>
+                            </button>
+
+                            <button onclick="Game.forageBushcraftAction()" class="btn-64 p-2.5 text-left">
+                                <div class="font-bold text-xs text-emerald-200 flex justify-between">
+                                    <span>🌿 Forage & Quarry Stone</span>
+                                    <span>-10⚡</span>
+                                </div>
+                                <div class="text-[11px] text-stone-300 mt-0.5">Gather stone, iron, herbs & dyes</div>
+                            </button>
+
+                            <button onclick="Game.butcherMeatToTidbits()" class="btn-64 p-2.5 text-left">
+                                <div class="font-bold text-xs text-rose-200 flex justify-between">
+                                    <span>🔪 Cut Falcon Tidbits</span>
+                                    <span>-1 Meat</span>
+                                </div>
+                                <div class="text-[11px] text-stone-300 mt-0.5">Carve 1 Raw Meat -> 4 Tidbits</div>
+                            </button>
+
+                            <button onclick="Game.cookCampfireMeal()" class="btn-64 p-2.5 text-left">
+                                <div class="font-bold text-xs text-yellow-200 flex justify-between">
+                                    <span>🍲 Roast Hunter Stew</span>
+                                    <span>-1 Meat</span>
+                                </div>
+                                <div class="text-[11px] text-stone-300 mt-0.5">Restore +45 Falconer Energy</div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==========================================
+                 TAB 3: WOODWORKING & CRAFTS WORKSHOP
+                 ========================================== -->
+            <div id="tabPanel-workshop" class="hidden space-y-4">
+                <!-- Timber Stain & Finish Customizer -->
+                <div class="wood-card p-3">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                        <div>
+                            <h3 class="font-pixel-title text-xs text-amber-300">🎨 HOMESTEAD TIMBER STAIN & FINISH CUSTOMIZER</h3>
+                            <p class="text-xs text-stone-300">Customize the wood grain & stain of all buildings and perches on your 64-Bit Viewport + active camp buff.</p>
+                        </div>
+                    </div>
+                    <div id="woodStainGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Crafting Filter & Recipe Grid -->
+                <div>
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+                        <h3 class="font-pixel-title text-xs text-amber-300">🪚 WOODWORKING & FALCONRY BENCH</h3>
+                        <div class="flex flex-wrap gap-1.5 text-xs">
+                            <button onclick="Game.filterWorkshop('all')" id="wfBtn-all" class="btn-64 tab-active px-2.5 py-1">All</button>
+                            <button onclick="Game.filterWorkshop('perch')" id="wfBtn-perch" class="btn-64 px-2.5 py-1">Perches</button>
+                            <button onclick="Game.filterWorkshop('gear')" id="wfBtn-gear" class="btn-64 px-2.5 py-1">Hoods/Jesses/Bells</button>
+                            <button onclick="Game.filterWorkshop('trap')" id="wfBtn-trap" class="btn-64 px-2.5 py-1">Traps & Tools</button>
+                            <button onclick="Game.filterWorkshop('trade')" id="wfBtn-trade" class="btn-64 px-2.5 py-1">Carved Trade Goods</button>
+                        </div>
+                    </div>
+
+                    <div id="workshopRecipeGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==========================================
+                 TAB 4: 8-SLOT MODULAR HOMESTEAD BUILDER
+                 ========================================== -->
+            <div id="tabPanel-homestead" class="hidden space-y-3.5">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                        <h3 class="font-pixel-title text-xs text-amber-300">🏡 8-SLOT MODULAR HOMESTEAD & MEWS ARCHITECT</h3>
+                        <p class="text-xs text-stone-300">Build, upgrade, or rearrange structures across your 8 plot slots. Every slot renders live on your 64-bit clearing!</p>
+                    </div>
+                    <div class="text-xs bg-stone-900/90 border border-amber-500/40 px-3 py-1.5 rounded-lg">
+                        Carpentry Discount: <b id="uiCarpentryDiscount" class="text-emerald-300">0%</b>
+                    </div>
+                </div>
+
+                <!-- 8-Slot Plot Grid -->
+                <div id="homesteadSlotGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- ==========================================
+                 TAB 5: MISSIONS & GUILD CONTRACTS
+                 ========================================== -->
+            <div id="tabPanel-quests" class="hidden space-y-4">
+                <!-- Dynamic Guild Bounties & Woodworking Contracts -->
+                <div class="wood-card p-3.5">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+                        <div>
+                            <h3 class="font-pixel-title text-xs text-amber-300">📋 ROYAL FALCONER'S GUILD CONTRACTS (ENDLESS)</h3>
+                            <p class="text-xs text-stone-300">Fulfill woodworking commissions, quarry bounties, and training exhibitions for Gold Coins.</p>
+                        </div>
+                        <button onclick="Game.refreshGuildContracts(true)" class="btn-64 px-2.5 py-1 text-xs text-amber-200 flex items-center gap-1">
+                            <i class="fa-solid fa-rotate"></i> New Contracts
+                        </button>
+                    </div>
+                    <div id="guildContractsGrid" class="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- 26 Milestone Story & Progression Quests -->
+                <div class="wood-card p-3.5">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+                        <div>
+                            <h3 class="font-pixel-title text-xs text-emerald-300">🏆 THE FALCONER'S JOURNEY (26 MILESTONES)</h3>
+                            <p class="text-xs text-stone-300">Complete milestones to unlock prestigious Falconer Titles, Gold, and rare timber.</p>
+                        </div>
+                        <span id="milestoneProgressBadge" class="text-xs bg-stone-900 border border-emerald-500/40 px-2.5 py-1 rounded text-emerald-300 font-bold">0 / 26 Completed</span>
+                    </div>
+                    <div id="milestoneQuestList" class="grid grid-cols-1 md:grid-cols-2 gap-2.5 max-h-80 overflow-y-auto pr-1">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==========================================
+                 TAB 6: SAVE / LOAD & CAMP CUSTOMIZER
+                 ========================================== -->
+            <div id="tabPanel-settings" class="hidden space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+
+                    <!-- Identity & Banner Customizer -->
+                    <div class="wood-card p-3.5 space-y-3">
+                        <h3 class="font-pixel-title text-xs text-amber-300">🏳️ FALCONER & HOMESTEAD CUSTOMIZATION</h3>
+
+                        <div class="space-y-2 text-xs">
+                            <div>
+                                <label class="block text-stone-300 mb-1 font-semibold">Falconer Name:</label>
+                                <input id="setFalconerName" type="text" maxlength="18" onchange="Game.updateIdentity()"
+                                    class="w-full bg-stone-900 border border-stone-600 rounded px-2.5 py-1.5 text-amber-200 font-bold outline-none focus:border-amber-400">
+                            </div>
+
+                            <div>
+                                <label class="block text-stone-300 mb-1 font-semibold">Homestead Camp Name:</label>
+                                <input id="setCampName" type="text" maxlength="22" onchange="Game.updateIdentity()"
+                                    class="w-full bg-stone-900 border border-stone-600 rounded px-2.5 py-1.5 text-amber-200 font-bold outline-none focus:border-amber-400">
+                            </div>
+
+                            <div>
+                                <label class="block text-stone-300 mb-1 font-semibold">Equipped Falconer Title:</label>
+                                <select id="setFalconerTitle" onchange="Game.updateIdentity()"
+                                    class="w-full bg-stone-900 border border-stone-600 rounded px-2.5 py-1.5 text-emerald-300 font-semibold outline-none">
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-stone-300 mb-1 font-semibold">Homestead Flag & Banner Color (Canvas Roof Pennant):</label>
+                                <div id="bannerColorGrid" class="flex flex-wrap gap-2 pt-1">
+                                    <!-- Populated by JS -->
+                                </div>
+                            </div>
+
+                            <div class="pt-2 flex items-center justify-between border-t border-stone-700">
+                                <span>CRT Retro Scanlines Effect</span>
+                                <button onclick="Game.toggleCRT()" id="btnToggleCRT" class="btn-64 px-3 py-1 text-xs">ON</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3 LocalStorage Save Slots + Export/Import Code -->
+                    <div class="wood-card p-3.5 flex flex-col justify-between space-y-3">
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <h3 class="font-pixel-title text-xs text-emerald-300">💾 3 SAVE SLOTS & BACKUP CODE</h3>
+                                <span class="text-[11px] text-stone-400">Auto-saves every 30s</span>
+                            </div>
+                            <div id="saveSlotsContainer" class="space-y-2">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+
+                        <!-- Export / Import Save String -->
+                        <div class="border-t border-stone-700 pt-2.5">
+                            <label class="block text-xs text-stone-300 font-semibold mb-1">Cross-Device Save Code (Export / Import):</label>
+                            <div class="flex gap-1.5">
+                                <input id="saveCodeInput" type="text" placeholder="Paste save code here or click Export..."
+                                    class="flex-1 bg-stone-900 border border-stone-700 rounded px-2 py-1 text-xs text-stone-200 outline-none">
+                                <button onclick="Game.exportSaveString()" class="btn-64 px-2.5 py-1 text-xs text-amber-200 font-semibold">Export</button>
+                                <button onclick="Game.importSaveString()" class="btn-64 btn-emerald px-2.5 py-1 text-xs font-semibold">Import</button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- MODAL FOR BUILDING SELECTION ON EMPTY HOMESTEAD SLOT -->
+    <div id="buildModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="wood-panel max-w-lg w-full p-4 space-y-3 max-h-[85vh] flex flex-col">
+            <div class="flex items-center justify-between border-b border-stone-700 pb-2">
+                <h3 class="font-pixel-title text-xs text-amber-300">🏗️ CHOOSE STRUCTURE FOR PLOT SLOT <span id="modalPlotSlotNum">1</span></h3>
+                <button onclick="Game.closeBuildModal()" class="text-stone-400 hover:text-white px-2 py-1 text-sm font-bold">✕</button>
+            </div>
+            <div id="buildModalList" class="overflow-y-auto space-y-2.5 pr-1 flex-1">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- MESSAGE BOX MODAL (Instead of alert()) -->
+    <div id="msgModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="wood-panel max-w-sm w-full p-4 text-center space-y-3 shadow-2xl border-2 border-amber-500">
+            <div id="msgModalIcon" class="text-3xl text-amber-400">🦅</div>
+            <h3 id="msgModalTitle" class="font-pixel-title text-xs text-amber-300">FALCONER'S NOTE</h3>
+            <p id="msgModalText" class="text-xs text-stone-200 leading-relaxed">Message goes here...</p>
+            <button onclick="Game.closeMsgModal()" class="btn-64 btn-amber px-5 py-2 text-xs font-bold w-full">Understood</button>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT GAME ENGINE -->
+    <script>
+        /* ========================================================
+           TALON & TIMBER: 64-BIT FALCONER - GAME ENGINE
+           ======================================================== */
+
+        // Game Data & State Structure
+        let gameState = {
+            version: "1.0.0",
+            falconerName: "Alden",
+            campName: "Timber Roost",
+            selectedTitleId: "apprentice",
+            bannerColor: "#8b2500", // Default Rust Red
+            day: 1,
+            timeOfDay: 0, // 0: Dawn, 1: Day, 2: Dusk, 3: Night
+            energy: 100,
+            maxEnergy: 100,
+            gold: 55,
+            crtEnabled: true,
+            soundEnabled: true,
+            activeSlot: 0, // Save slot 1, 2, or 3
+            
+            // Resources
+            resources: {
+                pine: 18,
+                birch: 10,
+                cedar: 5,
+                oak: 2,
+                walnut: 0,
+                meat: 6,
+                tidbits: 12,
+                pelts: 3,
+                feathers: 8,
+                stone: 14,
+                iron: 4,
+                herbs: 7,
+                dyes: 3
+            },
+
+            // Active Biome
+            currentBiome: 'pine_woods',
+
+            // Birds Roster
+            activeBirdIndex: 0,
+            birds: [
+                {
+                    name: "Bramble",
+                    species: "Red-Tailed Hawk",
+                    morph: "classic",
+                    level: 1,
+                    xp: 20,
+                    xpNext: 100,
+                    trust: 35, // 0 to 100
+                    keenness: 70, // 0 to 100 (ideal 55-85)
+                    stamina: 100,
+                    maxStamina: 100,
+                    power: 24,
+                    hooded: false,
+                    perch: "Pine Block Perch",
+                    hood: "Simple Leather Hood",
+                    jesses: "Rawhide Straps",
+                    bells: "Copper Acorn Bell"
+                }
+            ],
+
+            // Workshop Unlocks & Stains
+            currentStain: 'natural', // natural, dark_walnut, weathered_oak, golden_pine, ebony, whitewash
+            unlockedRecipes: [],
+            craftedItems: {
+                "Pine Block Perch": 1,
+                "Simple Leather Hood": 1,
+                "Rawhide Straps": 1,
+                "Copper Acorn Bell": 1
+            },
+
+            // Homestead 8 Plot Slots (null or object with building id & level)
+            homesteadPlots: [
+                { id: 'mews', level: 1 },         // Slot 0
+                { id: 'workshop', level: 1 },    // Slot 1
+                { id: 'lean_to', level: 1 },     // Slot 2
+                { id: 'campfire', level: 1 },    // Slot 3
+                null,                            // Slot 4
+                null,                            // Slot 5
+                null,                            // Slot 6
+                null                             // Slot 7
+            ],
+
+            // Quests & Milestones
+            completedMilestones: [],
+            activeGuildContracts: []
+        };
+
+        // Static Game Configurations & Data
+        const BIOMES = {
+            pine_woods: { id: 'pine_woods', name: "Whispering Pine Woods", icon: "🌲", woodType: "pine", desc: "Dense evergreen canopy. Abundant hares and red-tailed hawks.", quarry: ["Snowshoe Hare", "Wood Pigeon", "Red Squirrel"], color: "#1e3a1e" },
+            birch_grove: { id: 'birch_grove', name: "Silver Birch Riverbank", icon: "🌳", woodType: "birch", desc: "Misty river banks and white birch groves. Frequent duck flights.", quarry: ["Mallard Duck", "Water Vole", "Snipe"], color: "#2d3d3a" },
+            cedar_hills: { id: 'cedar_hills', name: "Rugged Cedar Hills", icon: "⛰️", woodType: "cedar", desc: "Rocky limestone cliffs and aromatic cedar. Home to swift falcons.", quarry: ["Ring-necked Pheasant", "Rock Dove", "Kestrel"], color: "#3a2e25" },
+            oak_forest: { id: 'oak_forest', name: "Ancient Oak Woodlands", icon: "🍂", woodType: "oak", desc: "Mighty centuries-old oaks producing rich acorns and heavy game.", quarry: ["Grey Squirrel", "Woodcock", "Cottontail"], color: "#38281a" },
+            valleys: { id: 'valleys', name: "Mistral High Valleys", icon: "🦅", woodType: "walnut", desc: "Alpine foothills where rare raptors soar on thermal updrafts.", quarry: ["Ptarmigan", "Alpine Hare", "Peregrine Falcon"], color: "#252b36" }
+        };
+
+        const RAPTOR_MORPHS = [
+            { id: 'classic', name: "Classic Brown", color: "#8b5a2b", accent: "#d2b48c" },
+            { id: 'tiercel', name: "Slate Blue", color: "#465c69", accent: "#8fa3af" },
+            { id: 'albino', name: "Snowy White", color: "#e8ede9", accent: "#c5d1c8" },
+            { id: 'melanistic', name: "Dark Sooty", color: "#2b2622", accent: "#594d44" },
+            { id: 'golden', name: "Golden Crest", color: "#b8860b", accent: "#ffd700" }
+        ];
+
+        const WOOD_STAINS = [
+            { id: 'natural', name: "Natural Pine", color: "#d4a373", buff: "None (Standard)" },
+            { id: 'dark_walnut', name: "Dark Walnut", color: "#582f0e", buff: "+5% Raptor Trust Gain" },
+            { id: 'weathered_oak', name: "Weathered Oak", color: "#6c757d", buff: "-5% Building Energy Cost" },
+            { id: 'golden_pine', name: "Golden Amber", color: "#dda15e", buff: "+10% Wood Yield on Fell" },
+            { id: 'ebony', name: "Midnight Ebony", color: "#212529", buff: "+10% Stoop Power Gain" },
+            { id: 'whitewash', name: "Frost Whitewash", color: "#e9ecef", buff: "+15% Carpentry Discount" }
+        ];
+
+        const FALCONER_TITLES = [
+            { id: 'apprentice', name: "Apprentice Austringer", desc: "Starting title. Learning the basics of the glove and lure." },
+            { id: 'falconer', name: "Journeyman Falconer", desc: "Trusted by hawks; able to fly free-flight quarry." },
+            { id: 'master', name: "Master of the Mews", desc: "Renowned across the realm for legendary training and woodworking." },
+            { id: 'royal', name: "Royal Falconer to the Crown", desc: "The pinnacle of falconry prestige and homestead architectural mastery." }
+        ];
+
+        const BANNER_COLORS = [
+            { id: '#8b2500', name: "Rust Red" },
+            { id: '#1b4332', name: "Forest Green" },
+            { id: '#1d3557', name: "Royal Navy" },
+            { id: '#5a189a', name: "Imperial Purple" },
+            { id: '#b5838d', name: "Autumn Mauve" },
+            { id: '#333333', name: "Iron Grey" }
+        ];
+
+        const WORKSHOP_RECIPES = [
+            // Perches
+            { id: 'perch_pine', name: "Pine Block Perch", cat: "perch", cost: { pine: 6 }, desc: "Standard indoor block perch padded with jute carpet.", unlocksGear: null },
+            { id: 'perch_swivel', name: "Swivel Ring Perch", cat: "perch", cost: { pine: 4, oak: 4, iron: 1 }, desc: "Advanced rotating ring perch prevents jesses from tangling.", unlocksGear: null },
+            { id: 'perch_weathering', name: "Garden Weathering Yard Perch", cat: "perch", cost: { oak: 10, stone: 5, iron: 2 }, desc: "Heavy outdoor lawn perch for safe sunning and manning.", unlocksGear: null },
+            
+            // Gear
+            { id: 'hood_leather', name: "Dutch Leather Hood", cat: "gear", cost: { pelts: 1 }, desc: "Hand-stitched leather hood to calm raptors during rest.", unlocksGear: "Dutch Leather Hood" },
+            { id: 'jesses_braided', name: "Braided Kangaroo Jesses", cat: "gear", cost: { pelts: 2 }, desc: "Strong flexible leather leg straps for secure glove attachment.", unlocksGear: "Braided Kangaroo Jesses" },
+            { id: 'bell_silver', name: "Sterling Silver Bell", cat: "gear", cost: { iron: 2, gold: 5 }, desc: "High-pitch ringing bell to locate hawk in dense timber.", unlocksGear: "Sterling Silver Bell" },
+
+            // Traps & Tools
+            { id: 'trap_raptor', name: "Pigeon Bow-Net Trap", cat: "trap", cost: { pine: 8, pelts: 2, iron: 1 }, desc: "Ethical live-capture box trap for wild raptor adoption.", unlocksGear: null },
+            { id: 'saw_steel', name: "Master Bow-Saw", cat: "trap", cost: { iron: 3, pine: 4 }, desc: "Razor-sharp steel saw reduces felling energy cost by 20%.", unlocksGear: null },
+
+            // Trade Goods
+            { id: 'carved_owl', name: "Carved Wooden Woodcock Figurine", cat: "trade", cost: { oak: 3 }, desc: "Exquisite hand-carved decoy. Sells to merchants for Gold.", sellsFor: 25 },
+            { id: 'carved_falcon', name: "Stooping Falcon Wood Carving", cat: "trade", cost: { walnut: 4, gold: 2 }, desc: "Masterpiece sculpture sought by nobility.", sellsFor: 70 }
+        ];
+
+        const HOMESTEAD_BUILDINGS = [
+            { id: 'mews', name: "Falconry Mews", icon: "🦅", maxLevel: 3, baseCost: { pine: 10, stone: 4 }, desc: "Shelter for raptors. Level increases bird capacity & health regen." },
+            { id: 'workshop', name: "Woodworking Shop", icon: "🪚", maxLevel: 3, baseCost: { pine: 12, oak: 4 }, desc: "Carpentry bench. Unlocks advanced furniture and reduces material costs." },
+            { id: 'lean_to', name: "Trapper's Lean-To", icon: "⛺", maxLevel: 3, baseCost: { pine: 8, pelts: 3 }, desc: "Cozy wilderness shelter for resting and overnight storage." },
+            { id: 'campfire', name: "Hearth & Smokehouse", icon: "🔥", maxLevel: 3, baseCost: { stone: 10, pine: 4 }, desc: "Curing meats, boiling tallow, and roasting savory stews." },
+            { id: 'cabin', name: "Timber Homestead Cabin", icon: "🏡", maxLevel: 3, baseCost: { pine: 20, oak: 10, stone: 8 }, desc: "Sturdy multi-room homestead cabin. Increases daily energy recovery." },
+            { id: 'aviary_flight', name: "Free-Flight Training Pen", icon: "🌤️", maxLevel: 2, baseCost: { cedar: 15, iron: 3 }, desc: "Enclosed open-air flight pen for accelerated hawk stamina training." },
+            { id: 'storage_shed', name: "Log & Pelt Storehouse", icon: "🪵", maxLevel: 3, baseCost: { pine: 15, cedar: 5 }, desc: "Expanded resource capacity and protection from weather rot." }
+        ];
+
+        const MILESTONE_QUESTS = [
+            { id: 'm1', title: "First Flight", desc: "Man your hawk on fist 3 times and reach 50% Trust.", reward: { gold: 20, tidbits: 5 } },
+            { id: 'm2', title: "Timber Stockpile", desc: "Harvest a total of 30 Pine or Birch logs.", reward: { gold: 25, iron: 2 } },
+            { id: 'm3', title: "Master of the Lure", desc: "Complete 5 successful Swing Lure drills in the viewport.", reward: { gold: 35, feathers: 10 } },
+            { id: 'm4', title: "First Quarry Strike", desc: "Successfully hunt any wild quarry in free-flight mode.", reward: { gold: 40, meat: 4 } },
+            { id: 'm5', title: "Woodworker's Apprentice", desc: "Craft any 3 items on the woodworking workbench.", reward: { gold: 30, oak: 5 } },
+            { id: 'm6', title: "Homestead Foundation", desc: "Construct 3 different buildings on your homestead plot slots.", reward: { gold: 50, pine: 10 } },
+            { id: 'm7', title: "Feathered Companion", desc: "Adopt a second bird into your Mews roster.", reward: { gold: 60, tidbits: 8 } },
+            { id: 'm8', title: "Apex Stoop", desc: "Train your active raptor's Stoop Power to 40 or higher.", reward: { gold: 75, feathers: 15 } }
+            // Additional milestones can be appended or generated procedurally
+        ];
+
+        // Fill remaining milestones up to 26 programmatically
+        for (let i = 9; i <= 26; i++) {
+            MILESTONE_QUESTS.push({
+                id: `m${i}`,
+                title: `Expedition Tier ${i}`,
+                desc: `Expand your homestead, master woodworking, and complete regional falconry contracts (Req: Day ${i * 2}).`,
+                reward: { gold: i * 15, tidbits: 5, herbs: 3 }
+            });
+        }
+
+
+        /* ========================================================
+           CANVAS 64-BIT PROCEDURAL GRAPHICS ENGINE
+           ======================================================== */
+        let canvas, ctx;
+        let flightActiveState = null; // Used during interactive hunts
+        let animFrameId = null;
+
+        function initCanvas() {
+            canvas = document.getElementById('gameCanvas');
+            ctx = canvas.getContext('2d');
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+        }
+
+        function resizeCanvas() {
+            const parent = canvas.parentElement;
+            canvas.width = parent.clientWidth;
+            canvas.height = parent.clientHeight;
+        }
+
+        // Procedural 64-Bit Rendering Loop
+        function renderScene() {
+            if (!ctx) return;
+            const w = canvas.width;
+            const h = canvas.height;
+
+            // 1. Sky & Atmosphere Background based on time of day
+            let skyGrad = ctx.createLinearGradient(0, 0, 0, h * 0.6);
+            if (gameState.timeOfDay === 0) { // Dawn
+                skyGrad.addColorStop(0, '#2d1b2d');
+                skyGrad.addColorStop(0.5, '#6b3a30');
+                skyGrad.addColorStop(1, '#d9822b');
+            } else if (gameState.timeOfDay === 1) { // Day
+                skyGrad.addColorStop(0, '#3a7bd5');
+                skyGrad.addColorStop(0.5, '#6ba4e8');
+                skyGrad.addColorStop(1, '#b5d3e7');
+            } else if (gameState.timeOfDay === 2) { // Dusk
+                skyGrad.addColorStop(0, '#1b1b3a');
+                skyGrad.addColorStop(0.5, '#5c2d42');
+                skyGrad.addColorStop(1, '#d96b2b');
+            } else { // Night
+                skyGrad.addColorStop(0, '#0b0f19');
+                skyGrad.addColorStop(1, '#19253f');
+            }
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, w, h);
+
+            // Stars if Night
+            if (gameState.timeOfDay === 3) {
+                ctx.fillStyle = '#ffffff';
+                for (let i = 0; i < 35; i++) {
+                    let sx = (i * 47) % w;
+                    let sy = (i * 23) % (h * 0.5);
+                    ctx.fillRect(sx, sy, 2, 2);
+                }
+            }
+
+            // 2. Distant Horizon Hills & Trees
+            ctx.fillStyle = '#1c2e22';
+            ctx.beginPath();
+            ctx.moveTo(0, h * 0.55);
+            ctx.lineTo(w * 0.2, h * 0.45);
+            ctx.lineTo(w * 0.5, h * 0.52);
+            ctx.lineTo(w * 0.8, h * 0.42);
+            ctx.lineTo(w, h * 0.5);
+            ctx.lineTo(w, h);
+            ctx.lineTo(0, h);
+            ctx.fill();
+
+            // 3. Foreground Terrain
+            let biome = BIOMES[gameState.currentBiome] || BIOMES.pine_woods;
+            ctx.fillStyle = biome.color;
+            ctx.fillRect(0, h * 0.55, w, h * 0.45);
+
+            // Terrain ground detail lines
+            ctx.fillStyle = '#142217';
+            ctx.fillRect(0, h * 0.57, w, 4);
+
+            // 4. Draw Homestead Buildings in Viewport (rendered from built plots)
+            let plotWidth = w / 8;
+            gameState.homesteadPlots.forEach((plot, idx) => {
+                let px = idx * plotWidth + plotWidth * 0.1;
+                let py = h * 0.55 - 45;
+                if (plot) {
+                    // Building base block
+                    ctx.fillStyle = getStainColorHex(gameState.currentStain);
+                    ctx.fillRect(px, py, plotWidth * 0.8, 50);
+                    ctx.strokeStyle = '#2b1b12';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(px, py, plotWidth * 0.8, 50);
+
+                    // Roof (colored with user banner color or roof tint)
+                    ctx.fillStyle = gameState.bannerColor;
+                    ctx.beginPath();
+                    ctx.moveTo(px - 6, py);
+                    ctx.lineTo(px + (plotWidth * 0.8) / 2, py - 24);
+                    ctx.lineTo(px + (plotWidth * 0.8) + 6, py);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+
+                    // Building Icon
+                    ctx.font = '16px serif';
+                    ctx.fillStyle = '#fff';
+                    ctx.fillText(getBuildingIcon(plot.id), px + 12, py + 30);
+                } else {
+                    // Empty Plot Post
+                    ctx.strokeStyle = '#4a3825';
+                    ctx.setLineDash([3, 3]);
+                    ctx.strokeRect(px, py + 15, plotWidth * 0.8, 35);
+                    ctx.setLineDash([]);
+                }
+            });
+
+            // 5. Draw Active Falcon / Hawk on Fist or in Flight
+            let activeBird = gameState.birds[gameState.activeBirdIndex] || gameState.birds[0];
+            if (activeBird) {
+                let morph = RAPTOR_MORPHS.find(m => m.id === activeBird.morph) || RAPTOR_MORPHS[0];
+
+                if (flightActiveState && flightActiveState.active) {
+                    // Hawk in Flight / Stoop mode
+                    let fx = flightActiveState.x;
+                    let fy = flightActiveState.y;
+
+                    // Draw soaring hawk
+                    ctx.fillStyle = morph.color;
+                    ctx.beginPath();
+                    ctx.ellipse(fx, fy, 16, 8, flightActiveState.angle, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#000';
+                    ctx.stroke();
+
+                    // Wings spread
+                    ctx.fillStyle = morph.accent;
+                    ctx.fillRect(fx - 8, fy - 14, 16, 6);
+
+                    // Quarry if visible
+                    if (flightActiveState.quarryX) {
+                        ctx.fillStyle = '#b08968';
+                        ctx.fillRect(flightActiveState.quarryX, h * 0.75, 12, 10);
+                        ctx.font = '10px sans-serif';
+                        ctx.fillStyle = '#fff';
+                        ctx.fillText("🐇", flightActiveState.quarryX, h * 0.72);
+                    }
+                } else {
+                    // Resting on Falconer Glove / Perch on left side
+                    let gx = w * 0.18;
+                    let gy = h * 0.65;
+
+                    // Falconer silhouette
+                    ctx.fillStyle = '#3a2d20';
+                    ctx.fillRect(gx - 15, gy - 35, 25, 45); // Body
+                    ctx.fillStyle = '#d4a373';
+                    ctx.beginPath();
+                    ctx.arc(gx - 2, gy - 42, 8, 0, Math.PI * 2); // Head
+                    ctx.fill();
+
+                    // Glove / Arm outstretched
+                    ctx.fillStyle = '#8b5a2b';
+                    ctx.fillRect(gx, gy - 20, 30, 8);
+
+                    // Bird sitting on glove
+                    ctx.fillStyle = morph.color;
+                    ctx.beginPath();
+                    ctx.arc(gx + 22, gy - 28, 11, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Bird Head & Beak
+                    ctx.fillStyle = morph.accent;
+                    ctx.fillRect(gx + 28, gy - 33, 6, 6);
+                    ctx.fillStyle = '#f4a261'; // beak
+                    ctx.fillRect(gx + 34, gy - 31, 4, 3);
+
+                    // Hood indicator if hooded
+                    if (activeBird.hooded) {
+                        ctx.fillStyle = '#2b1b12';
+                        ctx.fillRect(gx + 27, gy - 35, 8, 9);
+                    }
+                }
+            }
+
+            // 6. CRT Scanline overlay effect if enabled
+            if (gameState.crtEnabled) {
+                // Handled by CSS overlay
+            }
+        }
+
+        function getBuildingIcon(id) {
+            let b = HOMESTEAD_BUILDINGS.find(hb => hb.id === id);
+            return b ? b.icon : '🏠';
+        }
+
+        function getStainColorHex(stainId) {
+            let s = WOOD_STAINS.find(ws => ws.id === stainId);
+            return s ? s.color : '#d4a373';
+        }
+
+
+        /* ========================================================
+           SOUND SYNTHESIZER (Web Audio API 64-Bit Chiptune SFX)
+           ======================================================== */
+        let audioCtx = null;
+
+        function playSound(type) {
+            if (!gameState.soundEnabled) return;
+            try {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                let now = audioCtx.currentTime;
+
+                if (type === 'click') {
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(440, now);
+                    osc.frequency.exponentialRampToValueAtTime(220, now + 0.05);
+                    gain.gain.setValueAtTime(0.08, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                    osc.start(now);
+                    osc.stop(now + 0.05);
+                } else if (type === 'whistle') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(880, now);
+                    osc.frequency.exponentialRampToValueAtTime(1320, now + 0.15);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+                } else if (type === 'success') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
+                    osc.frequency.setValueAtTime(783.99, now + 0.16); // G5
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+                    osc.start(now);
+                    osc.stop(now + 0.35);
+                } else if (type === 'strike') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(80, now + 0.2);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                }
+            } catch (e) {
+                console.log("Audio skipped:", e);
+            }
+        }
+
+
+        /* ========================================================
+           GAME CONTROLLER & LOGIC METHODS
+           ======================================================== */
+        const Game = {
+
+            init() {
+                this.loadGame(1); // Load slot 1 on start
+                this.refreshUI();
+                initCanvas();
+                
+                // Start animation loop
+                function loop() {
+                    renderScene();
+                    animFrameId = requestAnimationFrame(loop);
+                }
+                loop();
+
+                // Auto-save interval every 30s
+                setInterval(() => {
+                    this.saveGame(gameState.activeSlot);
+                }, 30000);
+            },
+
+            // Notification message modal (replaces alert)
+            showModal(title, text, icon = '🦅') {
+                document.getElementById('msgModalTitle').innerText = title;
+                document.getElementById('msgModalText').innerText = text;
+                document.getElementById('msgModalIcon').innerText = icon;
+                document.getElementById('msgModal').classList.remove('hidden');
+            },
+
+            closeMsgModal() {
+                document.getElementById('msgModal').classList.add('hidden');
+                playSound('click');
+            },
+
+            logTicker(msg) {
+                let el = document.getElementById('uiActionLogTicker');
+                if (el) el.innerText = msg;
+            },
+
+            switchTab(tabId) {
+                playSound('click');
+                ['falconry', 'wilderness', 'workshop', 'homestead', 'quests', 'settings'].forEach(t => {
+                    let panel = document.getElementById(`tabPanel-${t}`);
+                    let btn = document.getElementById(`tabBtn-${t}`);
+                    if (panel) panel.classList.add('hidden');
+                    if (btn) btn.classList.remove('tab-active');
+                });
+                let targetPanel = document.getElementById(`tabPanel-${tabId}`);
+                let targetBtn = document.getElementById(`tabBtn-${tabId}`);
+                if (targetPanel) targetPanel.classList.remove('hidden');
+                if (targetBtn) targetBtn.classList.add('tab-active');
+            },
+
+            refreshUI() {
+                // Header Vitals
+                document.getElementById('uiCampName').innerText = gameState.campName.toUpperCase();
+                document.getElementById('uiFalconerName').innerText = gameState.falconerName;
+                document.getElementById('uiDayBadge').innerText = `Day ${gameState.day} • ${['Dawn', 'Day', 'Dusk', 'Night'][gameState.timeOfDay]}`;
+                let titleObj = FALCONER_TITLES.find(t => t.id === gameState.selectedTitleId) || FALCONER_TITLES[0];
+                document.getElementById('uiFalconerTitle').innerText = titleObj.name;
+
+                document.getElementById('uiEnergyText').innerText = `${gameState.energy}/${gameState.maxEnergy}`;
+                document.getElementById('uiEnergyBar').style.width = `${(gameState.energy / gameState.maxEnergy) * 100}%`;
+                document.getElementById('uiGoldCoins').innerText = gameState.gold;
+
+                let bird = gameState.birds[gameState.activeBirdIndex] || gameState.birds[0];
+                if (bird) {
+                    document.getElementById('uiHeaderBirdName').innerText = bird.name;
+                    document.getElementById('uiHeaderBirdTrust').innerText = `Trust ${bird.trust}%`;
+                    document.getElementById('uiHeaderBirdBar').style.width = `${bird.trust}%`;
+                    document.getElementById('inputBirdName').value = bird.name;
+                    document.getElementById('birdLevelBadge').innerText = `Lv. ${bird.level}`;
+                    document.getElementById('birdSpeciesSubtitle').innerText = `${bird.species} • ${bird.morph} morph`;
+
+                    // Falconry Tab Stats
+                    document.getElementById('statBirdTrust').innerText = `${bird.trust}%`;
+                    document.getElementById('barBirdTrust').style.width = `${bird.trust}%`;
+
+                    let keenText = bird.keenness < 55 ? "Low (Sluggish)" : (bird.keenness > 85 ? "Over-Keen (Wild)" : "Prime Hunter");
+                    document.getElementById('statBirdKeen').innerText = `${bird.keenness}% (${keenText})`;
+                    document.getElementById('barBirdKeen').style.width = `${bird.keenness}%`;
+
+                    document.getElementById('statBirdStamina').innerText = `${bird.stamina}/${bird.maxStamina}`;
+                    document.getElementById('barBirdStamina').style.width = `${(bird.stamina / bird.maxStamina) * 100}%`;
+
+                    document.getElementById('statBirdPower').innerText = `${bird.power} Pwr`;
+                    let xpPct = (bird.xp / bird.xpNext) * 100;
+                    document.getElementById('barBirdXp').style.width = `${xpPct}%`;
+
+                    document.getElementById('hoodStatusText').innerText = bird.hooded ? "Hooded (Calm)" : "Un-Hooded";
+                    document.getElementById('eqPerchName').innerText = bird.perch;
+                    document.getElementById('eqHoodName').innerText = bird.hood;
+                    document.getElementById('eqJessesName').innerText = bird.jesses;
+                    document.getElementById('eqBellsName').innerText = bird.bells;
+                }
+
+                // Resource Ticker
+                let totalWood = gameState.resources.pine + gameState.resources.birch + gameState.resources.cedar + gameState.resources.oak + gameState.resources.walnut;
+                document.getElementById('resTotalWood').innerText = totalWood;
+                document.getElementById('resMeat').innerText = gameState.resources.meat;
+                document.getElementById('resTidbits').innerText = gameState.resources.tidbits;
+                document.getElementById('resPelts').innerText = gameState.resources.pelts;
+                document.getElementById('resFeathers').innerText = gameState.resources.feathers;
+                document.getElementById('resStoneIron').innerText = `${gameState.resources.stone}/${gameState.resources.iron}`;
+                document.getElementById('resHerbs').innerText = gameState.resources.herbs;
+
+                // Sub-tab specific renders
+                this.renderBiomes();
+                this.renderMorphs();
+                this.renderWoodStains();
+                this.renderWorkshopRecipes();
+                this.renderHomesteadPlots();
+                this.renderMewsRoster();
+                this.renderMilestones();
+                this.renderGuildContracts();
+                this.renderSettingsPanel();
+            },
+
+            // --- FALCONRY ACTIONS ---
+            renameActiveBird(newName) {
+                if (!newName.trim()) return;
+                let bird = gameState.birds[gameState.activeBirdIndex];
+                if (bird) bird.name = newName.trim();
+                playSound('click');
+                this.refreshUI();
+            },
+
+            toggleBirdHood() {
+                let bird = gameState.birds[gameState.activeBirdIndex];
+                if (!bird) return;
+                bird.hooded = !bird.hooded;
+                playSound('click');
+                this.logTicker(`${bird.name} is now ${bird.hooded ? 'hooded and calm' : 'unhooded and alert'}.`);
+                this.refreshUI();
+            },
+
+            trainManOnFist() {
+                let bird = gameState.birds[gameState.activeBirdIndex];
+                if (!bird) return;
+                if (gameState.energy < 8) {
+                    this.showModal("Exhausted", "You need at least 8 Energy to man your raptor on glove.");
+                    return;
+                }
+                gameState.energy -= 8;
+                bird.trust = Math.min(100, bird.trust + 4);
+                bird.keenness = Math.max(20, bird.keenness - 2);
+                playSound('success');
+                this.logTicker(`Successfully manned ${bird.name} on glove. Trust increased!`);
+                this.refreshUI();
+            },
+
+            feedBirdTidbit() {
+                let bird = gameState.birds[gameState.activeBirdIndex];
+                if (!bird) return;
+                if (gameState.resources.tidbits < 1) {
+                    this.showModal("No Tidbits", "Cut raw meat into falcon tidbits in the Wilderness tab first.");
+                    return;
+                }
+                gameState.resources.tidbits -= 1;
+                bird.trust = Math.min(100, bird.trust + 6);
+                bird.stamina = Math.min(bird.maxStamina, bird.stamina + 25);
+                bird.keenness = Math.max(10, bird.keenness - 8);
+                playSound('success');
+                this.logTicker(`Fed ${bird.name} a savory tidbit. Stamina restored!`);
+                this.refreshUI();
+            },
+
+            trainCreanceCall() {
+                let bird = gameState.birds[gameState.activeBirdIndex];
+                if (!bird) return;
+                if (gameState.energy < 10) {
+                    this.showModal("Exhausted", "Need 10 Energy for creance line recall training.");
+                    return;
+                }
+                gameState.energy -= 10;
+                bird.trust = Math.min(100, bird.trust + 5);
+                bird.xp += 15;
+                if (bird.xp >= bird.xpNext) {
+                    bird.level++;
+                    bird.xp = 0;
+                    bird.xpNext = Math.floor(bird.xpNext * 1.5);
+                    bird.power += 4;
+                    this.showModal("Raptor Level Up!", `${bird.name} has reached Level ${bird.level}! Stoop Power increased to ${bird.power}.`, '🦅');
+                }
+                playSound('success');
+                this.logTicker(`${bird.name} completed creance recall drill cleanly.`);
+                this.refreshUI();
+            },
+
+            trainSwingLure() {
+                let bird = gameState.birds[gameState.activeBirdIndex];
+                if (!bird) return;
+                if (gameState.energy < 12) {
+                    this.showModal("Exhausted", "Need 12 Energy to swing the leather lure.");
+                    return;
+                }
+                gameState.energy -= 12;
+                bird.xp += 25;
+                bird.power += 2;
+                if (bird.xp >= bird.xpNext) {
+                    bird.level++;
+                    bird.xp = 0;
+                    bird.xpNext = Math.floor(bird.xpNext * 1.5);
+                    bird.power += 4;
+                    this.showModal("Raptor Level Up!", `${bird.name} has reached Level ${bird.level}! Stoop Power increased to ${bird.power}.`, '🦅');
+                }
+                playSound('success');
+                this.logTicker(`Swung the heavy lure! ${bird.name} executed powerful stoops.`);
+                this.refreshUI();
+            },
+
+            feedFullGorge() {
+                let bird = gameState.birds[gameState.activeBirdIndex];
+                if (!bird) return;
+                if (gameState.resources.meat < 2) {
+                    this.showModal("Need Meat", "Full gorge requires 2 Raw Game Meat.");
+                    return;
+                }
+                gameState.resources.meat -= 2;
+                bird.stamina = bird.maxStamina;
+                bird.keenness = Math.max(10, bird.keenness - 25);
+                playSound('success');
+                this.logTicker(`${bird.name} gorged fully on meat. Stamina at 100%.`);
+                this.refreshUI();
+            },
+
+            preenAndCope() {
+                let bird = gameState.birds[gameState.activeBirdIndex];
+                if (!bird) return;
+                if (gameState.energy < 5) return;
+                gameState.energy -= 5;
+                bird.trust = Math.min(100, bird.trust + 3);
+                gameState.resources.feathers += 2;
+                playSound('click');
+                this.logTicker(`Preened and coped ${bird.name}'s beak and talons. Harvested 2 feathers.`);
+                this.refreshUI();
+            },
+
+            renderMorphs() {
+                let grid = document.getElementById('morphSelectorGrid');
+                if (!grid) return;
+                let bird = gameState.birds[gameState.activeBirdIndex];
+                grid.innerHTML = RAPTOR_MORPHS.map(m => `
+                    <button onclick="Game.setBirdMorph('${m.id}')" class="p-1.5 rounded border text-[10px] font-semibold text-center transition ${bird && bird.morph === m.id ? 'border-amber-400 bg-amber-950/80 text-amber-200' : 'border-stone-700 bg-stone-900 text-stone-400 hover:text-white'}">
+                        <div class="w-full h-4 rounded mb-1" style="background-color: ${m.color}"></div>
+                        <span class="truncate block">${m.name}</span>
+                    </button>
+                `).join('');
+            },
+
+            setBirdMorph(morphId) {
+                let bird = gameState.birds[gameState.activeBirdIndex];
+                if (bird) bird.morph = morphId;
+                playSound('click');
+                this.refreshUI();
+            },
+
+            equipBirdGear(type, itemName) {
+                let bird = gameState.birds[gameState.activeBirdIndex];
+                if (!bird) return;
+                if (type === 'perch') bird.perch = itemName;
+                if (type === 'hood') bird.hood = itemName;
+                if (type === 'jesses') bird.jesses = itemName;
+                if (type === 'bells') bird.bells = itemName;
+                playSound('click');
+                this.logTicker(`Equipped ${itemName} to ${bird.name}.`);
+                this.refreshUI();
+            },
+
+            renderMewsRoster() {
+                let list = document.getElementById('mewsRosterList');
+                if (!list) return;
+                let maxCap = 2; // Default level 1 mews holds 2
+                document.getElementById('mewsCountText').innerText = `${gameState.birds.length}/${maxCap}`;
+
+                list.innerHTML = gameState.birds.map((b, idx) => `
+                    <div onclick="Game.setActiveBird(${idx})" class="p-2 rounded border cursor-pointer transition ${gameState.activeBirdIndex === idx ? 'border-amber-400 bg-amber-950/70 text-amber-200' : 'border-stone-700 bg-stone-900 text-stone-300 hover:border-stone-500'}">
+                        <div class="flex items-center justify-between text-xs font-bold">
+                            <span>🦅 ${b.name}</span>
+                            <span class="text-[10px]">Lv.${b.level}</span>
+                        </div>
+                        <div class="text-[10px] text-stone-400 truncate">${b.species}</div>
+                    </div>
+                `).join('');
+            },
+
+            setActiveBird(idx) {
+                gameState.activeBirdIndex = idx;
+                playSound('click');
+                this.refreshUI();
+            },
+
+            // --- WILDERNESS & HUNTING ---
+            renderBiomes() {
+                let grid = document.getElementById('biomeGrid');
+                if (!grid) return;
+                grid.innerHTML = Object.values(BIOMES).map(b => `
+                    <button onclick="Game.setBiome('${b.id}')" class="p-2.5 rounded-lg border text-left transition ${gameState.currentBiome === b.id ? 'border-amber-400 bg-amber-950/85 text-amber-200 shadow' : 'border-stone-700 bg-stone-900 text-stone-300 hover:border-stone-500'}">
+                        <div class="text-xl mb-1">${b.icon}</div>
+                        <div class="font-bold text-xs truncate">${b.name}</div>
+                        <div class="text-[10px] text-stone-400 mt-0.5 line-clamp-1">${b.desc}</div>
+                    </button>
+                `).join('');
+
+                let activeB = BIOMES[gameState.currentBiome];
+                document.getElementById('uiBiomeBadge').innerText = `${activeB.icon} ${activeB.name}`;
+                document.getElementById('huntBiomeName').innerText = activeB.name;
+                
+                let quarryList = document.getElementById('biomeQuarryList');
+                quarryList.innerHTML = `
+                    <div class="font-semibold text-amber-300 mb-1">Local Quarry Species:</div>
+                    <div class="flex flex-wrap gap-1.5">
+                        ${activeB.quarry.map(q => `<span class="bg-stone-800 border border-stone-600 px-2 py-0.5 rounded text-[11px] text-stone-200">🐇 ${q}</span>`).join('')}
+                    </div>
+                `;
+            },
+
+            setBiome(biomeId) {
+                gameState.currentBiome = biomeId;
+                playSound('click');
+                this.logTicker(`Traveled to ${BIOMES[biomeId].name}.`);
+                this.refreshUI();
+            },
+
+            fellTimberAction() {
+                if (gameState.energy < 12) {
+                    this.showModal("Exhausted", "You need at least 12 Energy to fell timber.");
+                    return;
+                }
+                gameState.energy -= 12;
+                let activeB = BIOMES[gameState.currentBiome];
+                let woodType = activeB.woodType;
+                let yieldAmt = 3;
+                if (gameState.currentStain === 'golden_pine') yieldAmt = 4;
+                
+                gameState.resources[woodType] += yieldAmt;
+                playSound('success');
+                this.logTicker(`Felled timber in ${activeB.name}: +${yieldAmt} ${woodType} logs.`);
+                this.refreshUI();
+            },
+
+            forageBushcraftAction() {
+                if (gameState.energy < 10) {
+                    this.showModal("Exhausted", "You need at least 10 Energy for foraging.");
+                    return;
+                }
+                gameState.energy -= 10;
+                gameState.resources.stone += 2;
+                gameState.resources.herbs += 2;
+                if (Math.random() < 0.35) gameState.resources.iron += 1;
+                playSound('success');
+                this.logTicker(`Foraged the wilderness: +2 Stone, +2 Herbs, +Stones.`);
+                this.refreshUI();
+            },
+
+            butcherMeatToTidbits() {
+                if (gameState.resources.meat < 1) {
+                    this.showModal("No Meat", "You need Raw Game Meat to cut into falcon tidbits.");
+                    return;
+                }
+                gameState.resources.meat -= 1;
+                gameState.resources.tidbits += 4;
+                playSound('click');
+                this.logTicker(`Carved 1 Raw Meat into 4 savory Falcon Tidbits.`);
+                this.refreshUI();
+            },
+
+            cookCampfireMeal() {
+                if (gameState.resources.meat < 1) {
+                    this.showModal("No Meat", "You need Raw Game Meat to cook Hunter Stew.");
+                    return;
+                }
+                gameState.resources.meat -= 1;
+                gameState.energy = Math.min(gameState.maxEnergy, gameState.energy + 45);
+                playSound('success');
+                this.logTicker(`Cooked and consumed a hearty Hunter Stew. Energy restored!`);
+                this.refreshUI();
+            },
+
+            // Interactive Hunt System in Viewport
+            startInteractiveHunt() {
+                let bird = gameState.birds[gameState.activeBirdIndex];
+                if (!bird) return;
+                if (bird.trust < 20) {
+                    this.showModal("Bird Untrusted", "Your hawk's trust is too low! Man on glove and do creance flights first.");
+                    return;
+                }
+                if (gameState.energy < 15) {
+                    this.showModal("Exhausted", "Need 15 Energy to launch free-flight hunt.");
+                    return;
+                }
+                gameState.energy -= 15;
+                playSound('whistle');
+
+                // Activate flight overlay
+                flightActiveState = {
+                    active: true,
+                    x: canvas.width * 0.2,
+                    y: canvas.height * 0.3,
+                    angle: -0.2,
+                    quarryX: canvas.width * 0.75,
+                    phase: 'soaring' // soaring, flushing, stooping
+                };
+
+                document.getElementById('huntActionOverlay').classList.remove('hidden');
+                document.getElementById('huntOverlayTitle').innerText = "HAWK CIRCLING THERMALS...";
+                document.getElementById('huntOverlaySub').innerText = "Quarry spotted ahead in the brush. Wait for peak stoop!";
+                document.getElementById('btnHuntStrike').removeAttribute('disabled');
+            },
+
+            executeHuntStrike() {
+                if (!flightActiveState || !flightActiveState.active) return;
+                flightActiveState.active = false;
+                document.getElementById('huntActionOverlay').classList.add('hidden');
+                playSound('strike');
+
+                let bird = gameState.birds[gameState.activeBirdIndex];
+                let successChance = 0.6 + (bird.power * 0.01) + (bird.trust * 0.002);
+                
+                if (Math.random() < successChance) {
+                    let activeB = BIOMES[gameState.currentBiome];
+                    let quarryName = activeB.quarry[Math.floor(Math.random() * activeB.quarry.length)];
+                    gameState.resources.meat += 2;
+                    gameState.resources.pelts += 1;
+                    gameState.resources.feathers += 3;
+                    bird.xp += 40;
+                    if (bird.xp >= bird.xpNext) {
+                        bird.level++;
+                        bird.xp = 0;
+                        bird.power += 5;
+                    }
+                    this.showModal("Successful Hunt!", `${bird.name} delivered a lightning-fast stoop strike, securing a ${quarryName}! Harvested 2 Meat, 1 Pelt, 3 Feathers.`, '🏆');
+                    this.logTicker(`Successful Hunt! ${bird.name} caught a ${quarryName}.`);
+                } else {
+                    this.showModal("Quarry Escaped", `${bird.name}'s stoop missed just as the ${activeB.quarry[0]} darted into a thick briar patch.`, '💨');
+                    this.logTicker(`Hunt missed. Quarry escaped into cover.`);
+                }
+                this.refreshUI();
+            },
+
+            cancelActiveFlight() {
+                if (flightActiveState) flightActiveState.active = false;
+                document.getElementById('huntActionOverlay').classList.add('hidden');
+                playSound('click');
+                this.logTicker("Recalled hawk safely to fist.");
+            },
+
+            attemptTrapWildRaptor() {
+                if (gameState.energy < 20) {
+                    this.showModal("Exhausted", "Need 20 Energy to set up a raptor trapping blind.");
+                    return;
+                }
+                gameState.energy -= 20;
+                if (Math.random() < 0.45 && gameState.birds.length < 3) {
+                    let newSpecies = ["Kestrel", "Goshawk", "Peregrine Falcon"][Math.floor(Math.random() * 3)];
+                    let newMorphs = ['classic', 'tiercel', 'golden', 'melanistic'];
+                    gameState.birds.push({
+                        name: "Skye",
+                        species: newSpecies,
+                        morph: newMorphs[Math.floor(Math.random() * newMorphs.length)],
+                        level: 1,
+                        xp: 0,
+                        xpNext: 100,
+                        trust: 20,
+                        keenness: 65,
+                        stamina: 100,
+                        maxStamina: 100,
+                        power: 20,
+                        hooded: true,
+                        perch: "Pine Block Perch",
+                        hood: "Simple Leather Hood",
+                        jesses: "Rawhide Straps",
+                        bells: "Copper Acorn Bell"
+                    });
+                    playSound('success');
+                    this.showModal("Wild Raptor Adopted!", `Your box trap successfully lured a wild ${newSpecies}! Added to your Mews roster.`, '🦅');
+                } else {
+                    this.showModal("Trap Empty", "No wild raptor took the pigeon bait today. Try again tomorrow.", '🪤');
+                }
+                this.refreshUI();
+            },
+
+            // --- WOODWORKING WORKSHOP ---
+            renderWoodStains() {
+                let grid = document.getElementById('woodStainGrid');
+                if (!grid) return;
+                grid.innerHTML = WOOD_STAINS.map(s => `
+                    <button onclick="Game.setWoodStain('${s.id}')" class="p-2 rounded border text-left transition ${gameState.currentStain === s.id ? 'border-amber-400 bg-amber-950/85 text-amber-200' : 'border-stone-700 bg-stone-900 text-stone-400 hover:text-white'}">
+                        <div class="flex items-center gap-1.5 mb-1">
+                            <div class="w-3.5 h-3.5 rounded-full border border-stone-500" style="background-color: ${s.color}"></div>
+                            <span class="font-bold text-[11px] truncate">${s.name}</span>
+                        </div>
+                        <div class="text-[9px] text-stone-400">${s.buff}</div>
+                    </button>
+                `).join('');
+
+                let activeS = WOOD_STAINS.find(s => s.id === gameState.currentStain) || WOOD_STAINS[0];
+                document.getElementById('uiStainBadge').innerText = `🪵 Stain: ${activeS.name}`;
+            },
+
+            setWoodStain(stainId) {
+                gameState.currentStain = stainId;
+                playSound('click');
+                this.refreshUI();
+            },
+
+            filterWorkshop(cat) {
+                playSound('click');
+                ['all', 'perch', 'gear', 'trap', 'trade'].forEach(c => {
+                    let btn = document.getElementById(`wfBtn-${c}`);
+                    if (btn) btn.classList.remove('tab-active');
+                });
+                let activeBtn = document.getElementById(`wfBtn-${cat}`);
+                if (activeBtn) activeBtn.classList.add('tab-active');
+                this.renderWorkshopRecipes(cat);
+            },
+
+            renderWorkshopRecipes(filterCat = 'all') {
+                let grid = document.getElementById('workshopRecipeGrid');
+                if (!grid) return;
+
+                let recipes = WORKSHOP_RECIPES.filter(r => filterCat === 'all' || r.cat === filterCat);
+                grid.innerHTML = recipes.map(r => {
+                    let canAfford = true;
+                    let costStr = Object.entries(r.cost).map(([res, amt]) => {
+                        let have = gameState.resources[res] || 0;
+                        if (have < amt) canAfford = false;
+                        return `<span class="${have < amt ? 'text-red-400' : 'text-stone-300'}">${amt} ${res}</span>`;
+                    }).join(', ');
+
+                    return `
+                        <div class="wood-card p-3 flex flex-col justify-between gap-2.5">
+                            <div>
+                                <div class="flex items-center justify-between mb-1">
+                                    <h5 class="font-bold text-xs text-amber-200">${r.name}</h5>
+                                    <span class="text-[10px] bg-stone-900 border border-stone-700 px-1.5 py-0.5 rounded text-stone-300 uppercase">${r.cat}</span>
+                                </div>
+                                <p class="text-[11px] text-stone-300 leading-relaxed">${r.desc}</p>
+                            </div>
+                            <div>
+                                <div class="text-[10px] text-stone-400 mb-1.5">Cost: ${costStr}</div>
+                                <button onclick="Game.craftWorkshopItem('${r.id}')" ${!canAfford ? 'disabled' : ''} class="btn-64 ${canAfford ? 'btn-amber' : ''} w-full py-1.5 text-xs font-semibold">
+                                    ${r.sellsFor ? `Carve & Sell (+${r.sellsFor} Gold)` : 'Craft Item'}
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            },
+
+            craftWorkshopItem(recipeId) {
+                let recipe = WORKSHOP_RECIPES.find(r => r.id === recipeId);
+                if (!recipe) return;
+
+                // Check costs
+                for (let [res, amt] of Object.entries(recipe.cost)) {
+                    if ((gameState.resources[res] || 0) < amt) {
+                        this.showModal("Missing Materials", `You do not have enough ${res} to craft ${recipe.name}.`);
+                        return;
+                    }
+                }
+
+                // Deduct costs
+                for (let [res, amt] of Object.entries(recipe.cost)) {
+                    gameState.resources[res] -= amt;
+                }
+
+                if (recipe.sellsFor) {
+                    gameState.gold += recipe.sellsFor;
+                    playSound('success');
+                    this.logTicker(`Carved ${recipe.name} and sold to merchant for ${recipe.sellsFor} gold!`);
+                } else {
+                    gameState.craftedItems[recipe.name] = (gameState.craftedItems[recipe.name] || 0) + 1;
+                    playSound('success');
+                    this.logTicker(`Successfully crafted ${recipe.name} in workshop!`);
+                }
+                this.refreshUI();
+            },
+
+            // --- HOMESTEAD 8-SLOT ARCHITECT ---
+            renderHomesteadPlots() {
+                let grid = document.getElementById('homesteadSlotGrid');
+                if (!grid) return;
+
+                // Calculate carpentry discount based on stain or workshop level
+                let discount = gameState.currentStain === 'whitewash' ? 15 : 0;
+                document.getElementById('uiCarpentryDiscount').innerText = `${discount}%`;
+
+                grid.innerHTML = gameState.homesteadPlots.map((plot, idx) => {
+                    if (plot) {
+                        let buildingDef = HOMESTEAD_BUILDINGS.find(b => b.id === plot.id);
+                        return `
+                            <div class="wood-card p-3 flex flex-col justify-between gap-2.5 border-2 border-amber-600/50">
+                                <div>
+                                    <div class="flex items-center justify-between mb-1">
+                                        <span class="text-lg">${buildingDef.icon}</span>
+                                        <span class="text-[10px] bg-amber-950 border border-amber-500/50 text-amber-300 px-1.5 py-0.5 rounded font-semibold">Slot ${idx+1} • Lv.${plot.level}</span>
+                                    </div>
+                                    <h5 class="font-bold text-xs text-white">${buildingDef.name}</h5>
+                                    <p class="text-[10px] text-stone-300 mt-1">${buildingDef.desc}</p>
+                                </div>
+                                <div class="flex gap-1.5 pt-2 border-t border-stone-700">
+                                    ${plot.level < buildingDef.maxLevel ? `<button onclick="Game.upgradeHomesteadPlot(${idx})" class="btn-64 btn-amber flex-1 py-1 text-[11px] font-semibold">Upgrade</button>` : '<span class="text-[10px] text-emerald-300 font-bold py-1">Max Level</span>'}
+                                    <button onclick="Game.demolishHomesteadPlot(${idx})" class="btn-64 btn-crimson px-2.5 py-1 text-[11px]" title="Demolish">🗑️</button>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        return `
+                            <div onclick="Game.openBuildModal(${idx})" class="wood-card p-4 flex flex-col items-center justify-center text-center gap-2 border-2 border-dashed border-stone-600 hover:border-amber-400 cursor-pointer transition min-h-[150px]">
+                                <span class="text-2xl text-stone-500">➕</span>
+                                <span class="font-bold text-xs text-stone-300">Empty Plot Slot ${idx+1}</span>
+                                <span class="text-[10px] text-stone-400">Click to build a structure</span>
+                            </div>
+                        `;
+                    }
+                }).join('');
+            },
+
+            openBuildModal(slotIdx) {
+                gameState.modalTargetSlot = slotIdx;
+                document.getElementById('modalPlotSlotNum').innerText = slotIdx + 1;
+                
+                let list = document.getElementById('buildModalList');
+                list.innerHTML = HOMESTEAD_BUILDINGS.map(b => `
+                    <div class="bg-stone-900 border border-stone-700 rounded-lg p-3 flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-2.5">
+                            <span class="text-2xl">${b.icon}</span>
+                            <div>
+                                <h6 class="font-bold text-xs text-amber-200">${b.name}</h6>
+                                <p class="text-[11px] text-stone-300 mt-0.5">${b.desc}</p>
+                                <div class="text-[10px] text-stone-400 mt-1">Cost: Pine 10, Stone 4</div>
+                            </div>
+                        </div>
+                        <button onclick="Game.constructBuilding('${b.id}')" class="btn-64 btn-amber px-3 py-1.5 text-xs font-semibold whitespace-nowrap">Build</button>
+                    </div>
+                `).join('');
+
+                document.getElementById('buildModal').classList.remove('hidden');
+                playSound('click');
+            },
+
+            closeBuildModal() {
+                document.getElementById('buildModal').classList.add('hidden');
+                playSound('click');
+            },
+
+            constructBuilding(buildingId) {
+                let slotIdx = gameState.modalTargetSlot;
+                gameState.homesteadPlots[slotIdx] = { id: buildingId, level: 1 };
+                this.closeBuildModal();
+                playSound('success');
+                this.logTicker(`Constructed new ${buildingId} on plot slot ${slotIdx + 1}!`);
+                this.refreshUI();
+            },
+
+            upgradeHomesteadPlot(slotIdx) {
+                let plot = gameState.homesteadPlots[slotIdx];
+                if (!plot) return;
+                plot.level++;
+                playSound('success');
+                this.logTicker(`Upgraded structure on slot ${slotIdx + 1} to Level ${plot.level}!`);
+                this.refreshUI();
+            },
+
+            demolishHomesteadPlot(slotIdx) {
+                gameState.homesteadPlots[slotIdx] = null;
+                playSound('click');
+                this.logTicker(`Cleared plot slot ${slotIdx + 1}.`);
+                this.refreshUI();
+            },
+
+            // --- MISSIONS & GUILD CONTRACTS ---
+            renderMilestones() {
+                let list = document.getElementById('milestoneQuestList');
+                if (!list) return;
+                let completedCount = gameState.completedMilestones.length;
+                document.getElementById('milestoneProgressBadge').innerText = `${completedCount} / ${MILESTONE_QUESTS.length} Completed`;
+
+                if (completedCount >= 1) {
+                    document.getElementById('questAlertDot').classList.remove('hidden');
+                } else {
+                    document.getElementById('questAlertDot').classList.add('hidden');
+                }
+
+                list.innerHTML = MILESTONE_QUESTS.map(m => {
+                    let isCompleted = gameState.completedMilestones.includes(m.id);
+                    return `
+                        <div class="bg-stone-900/80 border ${isCompleted ? 'border-emerald-600/50 bg-emerald-950/20' : 'border-stone-700'} rounded-lg p-3 flex items-center justify-between gap-3">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="font-bold text-xs ${isCompleted ? 'text-emerald-300 line-through' : 'text-amber-200'}">${m.title}</span>
+                                    ${isCompleted ? '<span class="text-[10px] bg-emerald-900 text-emerald-200 px-1.5 py-0.2 rounded">Completed</span>' : ''}
+                                </div>
+                                <p class="text-[11px] text-stone-300 mt-0.5">${m.desc}</p>
+                                <div class="text-[10px] text-amber-400 mt-1">Reward: ${m.reward.gold} Gold, ${m.reward.tidbits || m.reward.iron || 5} items</div>
+                            </div>
+                            ${!isCompleted ? `<button onclick="Game.claimMilestone('${m.id}')" class="btn-64 btn-emerald px-3 py-1.5 text-xs font-semibold whitespace-nowrap">Claim</button>` : ''}
+                        </div>
+                    `;
+                }).join('');
+            },
+
+            claimMilestone(milestoneId) {
+                let m = MILESTONE_QUESTS.find(q => q.id === milestoneId);
+                if (!m || gameState.completedMilestones.includes(milestoneId)) return;
+
+                gameState.completedMilestones.push(milestoneId);
+                gameState.gold += m.reward.gold;
+                if (m.reward.tidbits) gameState.resources.tidbits += m.reward.tidbits;
+                if (m.reward.iron) gameState.resources.iron += m.reward.iron;
+                if (m.reward.feathers) gameState.resources.feathers += m.reward.feathers;
+
+                playSound('success');
+                this.logTicker(`Milestone Completed: ${m.title}!`);
+                this.refreshUI();
+            },
+
+            renderGuildContracts() {
+                let grid = document.getElementById('guildContractsGrid');
+                if (!grid) return;
+
+                // Ensure 3 active contracts
+                if (gameState.activeGuildContracts.length === 0) {
+                    this.refreshGuildContracts(false);
+                }
+
+                grid.innerHTML = gameState.activeGuildContracts.map((c, idx) => `
+                    <div class="bg-stone-900/90 border border-stone-700 rounded-lg p-3 flex flex-col justify-between gap-2.5">
+                        <div>
+                            <div class="font-bold text-xs text-amber-200">${c.title}</div>
+                            <p class="text-[11px] text-stone-300 mt-1">${c.desc}</p>
+                        </div>
+                        <div class="flex items-center justify-between pt-2 border-t border-stone-700">
+                            <span class="text-xs font-bold text-yellow-300">+${c.goldReward} Gold</span>
+                            <button onclick="Game.completeGuildContract(${idx})" class="btn-64 btn-amber px-3 py-1 text-xs font-semibold">Fulfill</button>
+                        </div>
+                    </div>
+                `).join('');
+            },
+
+            refreshGuildContracts(playSoundEffect = true) {
+                gameState.activeGuildContracts = [
+                    { title: "Noble's Duck Hunt", desc: "Deliver 3 prime feathers or mallard meat for the Earl's feast.", goldReward: 45 },
+                    { title: "Carpentry Commission", desc: "Deliver 8 Pine logs and 2 Pelts to the village builder.", goldReward: 55 },
+                    { title: "Raptor Exhibition", desc: "Perform a successful lure training demo for visiting falconers.", goldReward: 40 }
+                ];
+                if (playSoundEffect) playSound('click');
+                this.refreshUI();
+            },
+
+            completeGuildContract(idx) {
+                let c = gameState.activeGuildContracts[idx];
+                gameState.gold += c.goldReward;
+                gameState.activeGuildContracts.splice(idx, 1);
+                playSound('success');
+                this.logTicker(`Completed contract: ${c.title}! Earned ${c.goldReward} Gold.`);
+                this.refreshUI();
+            },
+
+            // --- SAVE / LOAD & SETTINGS ---
+            updateIdentity() {
+                gameState.falconerName = document.getElementById('setFalconerName').value.trim() || "Alden";
+                gameState.campName = document.getElementById('setCampName').value.trim() || "Timber Roost";
+                gameState.selectedTitleId = document.getElementById('setFalconerTitle').value;
+                playSound('click');
+                this.refreshUI();
+            },
+
+            renderSettingsPanel() {
+                document.getElementById('setFalconerName').value = gameState.falconerName;
+                document.getElementById('setCampName').value = gameState.campName;
+
+                let titleSelect = document.getElementById('setFalconerTitle');
+                titleSelect.innerHTML = FALCONER_TITLES.map(t => `<option value="${t.id}" ${gameState.selectedTitleId === t.id ? 'selected' : ''}>${t.name}</option>`).join('');
+
+                let bannerGrid = document.getElementById('bannerColorGrid');
+                bannerGrid.innerHTML = BANNER_COLORS.map(bc => `
+                    <button onclick="Game.setBannerColor('${bc.id}')" class="w-7 h-7 rounded-full border-2 ${gameState.bannerColor === bc.id ? 'border-amber-400 scale-110' : 'border-stone-600'} transition" style="background-color: ${bc.id}" title="${bc.name}"></button>
+                `).join('');
+
+                // Save Slots
+                let slotsContainer = document.getElementById('saveSlotsContainer');
+                slotsContainer.innerHTML = [1, 2, 3].map(slotNum => `
+                    <div class="bg-stone-900 border ${gameState.activeSlot === slotNum ? 'border-amber-400 bg-amber-950/40' : 'border-stone-700'} rounded-lg p-2.5 flex items-center justify-between gap-2">
+                        <div>
+                            <span class="font-bold text-xs text-amber-200">Save Slot ${slotNum}</span>
+                            <span class="text-[10px] text-stone-400 block">${gameState.activeSlot === slotNum ? 'Active Game' : 'Stored'}</span>
+                        </div>
+                        <div class="flex gap-1.5">
+                            <button onclick="Game.saveGame(${slotNum})" class="btn-64 px-2.5 py-1 text-xs">Save</button>
+                            <button onclick="Game.loadGame(${slotNum})" class="btn-64 btn-emerald px-2.5 py-1 text-xs">Load</button>
+                        </div>
+                    </div>
+                `).join('');
+            },
+
+            setBannerColor(colorHex) {
+                gameState.bannerColor = colorHex;
+                playSound('click');
+                this.refreshUI();
+            },
+
+            toggleCRT() {
+                gameState.crtEnabled = !gameState.crtEnabled;
+                let crtEl = document.getElementById('crtOverlay');
+                if (crtEl) crtEl.style.display = gameState.crtEnabled ? 'block' : 'none';
+                document.getElementById('btnToggleCRT').innerText = gameState.crtEnabled ? 'ON' : 'OFF';
+                playSound('click');
+            },
+
+            toggleSound() {
+                gameState.soundEnabled = !gameState.soundEnabled;
+                let btn = document.getElementById('btnSoundToggle');
+                btn.innerHTML = gameState.soundEnabled ? '<i class="fa-solid fa-volume-high"></i>' : '<i class="fa-solid fa-volume-xmark"></i>';
+                playSound('click');
+            },
+
+            sleepNextDay() {
+                gameState.day++;
+                gameState.timeOfDay = 0; // Dawn
+                gameState.energy = gameState.maxEnergy;
+
+                // Recover bird stamina slightly
+                gameState.birds.forEach(b => {
+                    b.stamina = Math.min(b.maxStamina, b.stamina + 40);
+                    b.keenness = Math.min(100, b.keenness + 8); // Natural increase overnight
+                });
+
+                playSound('success');
+                this.showModal("A New Dawn", `Slept soundly until Dawn of Day ${gameState.day}. Falconer Energy & Raptor Stamina fully restored.`, '⛺');
+                this.refreshUI();
+            },
+
+            saveGame(slotNum) {
+                gameState.activeSlot = slotNum;
+                localStorage.setItem(`talon_timber_slot_${slotNum}`, JSON.stringify(gameState));
+                playSound('success');
+                this.logTicker(`Game successfully saved to Slot ${slotNum}!`);
+                this.refreshUI();
+            },
+
+            loadGame(slotNum) {
+                let saved = localStorage.getItem(`talon_timber_slot_${slotNum}`);
+                if (saved) {
+                    try {
+                        gameState = JSON.parse(saved);
+                        gameState.activeSlot = slotNum;
+                        this.logTicker(`Loaded game from Slot ${slotNum}.`);
+                    } catch (e) {
+                        console.error("Save load error:", e);
+                    }
+                }
+                this.refreshUI();
+            },
+
+            exportSaveString() {
+                let saveCode = btoa(JSON.stringify(gameState));
+                let input = document.getElementById('saveCodeInput');
+                input.value = saveCode;
+                input.select();
+                document.execCommand('copy');
+                this.showModal("Save Code Copied", "Your export save code has been copied to your clipboard!", '💾');
+            },
+
+            importSaveString() {
+                let code = document.getElementById('saveCodeInput').value.trim();
+                if (!code) return;
+                try {
+                    let decoded = JSON.parse(atob(code));
+                    gameState = decoded;
+                    playSound('success');
+                    this.showModal("Save Imported", "Successfully imported save code!", '🏆');
+                    this.refreshUI();
+                } catch (e) {
+                    this.showModal("Import Failed", "Invalid save code string.", '⚠️');
+                }
+            }
+        };
+
+        // Window Onload initialization
+        window.onload = function() {
+            Game.init();
+        };
+    </script>
+</body>
+</html>
